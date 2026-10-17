@@ -2,6 +2,7 @@
 -- 1) Profile fields from main's onboarding flow.
 -- 2) Any .edu school works immediately (main's behavior): auto-created tenants are
 --    'active' instead of 'pending', so they're browsable and can post/trade cross-campus.
+--    Slug is the school name (gatech.edu -> gatech), matching main.
 
 alter table public.profiles
   add column major     text check (char_length(major) <= 80),
@@ -26,7 +27,7 @@ begin
 
   if v_tenant is null then
     v_reg  := array_to_string((string_to_array(v_domain, '.'))[array_length(string_to_array(v_domain, '.'), 1) - 1 :], '.');
-    v_slug := left(replace(v_reg, '.', '-'), 63);
+    v_slug := left(split_part(v_reg, '.', 1), 63);  -- gatech.edu -> gatech (main's convention)
     insert into public.tenants (slug, name, short_name, status)
     values (v_slug, v_reg, left(upper(split_part(v_reg, '.', 1)), 24), 'active')
     on conflict (slug) do nothing
