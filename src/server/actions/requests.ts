@@ -17,7 +17,7 @@ export async function createRequest(input: z.input<typeof requestInput>): Promis
   const { data, error } = await supabase.from("requests").insert({
     tenant_id: tenantId, requester_id: user.id, title: p.data.title, description: p.data.description,
     category: p.data.category, budget_cents: p.data.budgetCents ?? null, visibility: p.data.visibility,
-    needed_by: p.data.neededBy ?? null,
+    needed_by: p.data.neededBy ?? null, tags: p.data.tags, channel_id: p.data.channelId ?? null,
   }).select("id").single();
   if (error) return fail(error.code === "42501" ? "You can't post on this campus yet." : error);
   revalidatePath("/app");

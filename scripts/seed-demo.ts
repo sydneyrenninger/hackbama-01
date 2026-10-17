@@ -56,24 +56,24 @@ const [alex, blair, casey, devon] = people.map((p) => ids[p.name]);
 const L = (n: number) => `bbbbbbbb-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const listings = [
   // Three-way cycle across campuses: Alex(textbooks→lab) · Blair(lab→electronics) · Casey(electronics→textbooks)
-  { id: L(1), tenant_id: UA, seller_id: alex,  title: "Organic Chemistry (Klein, 4e)", category: "textbooks", kind: "trade", trade_wants_categories: ["lab"], trade_wants_text: "goggles lab coat", condition: "good", semester_moments: ["semester_start"] },
-  { id: L(2), tenant_id: UA, seller_id: blair, title: "Lab goggles + size M lab coat", category: "lab", kind: "trade", trade_wants_categories: ["electronics"], trade_wants_text: "graphing calculator", condition: "like_new", semester_moments: ["semester_start"] },
-  { id: L(3), tenant_id: RB, seller_id: casey, title: "TI-84 Plus graphing calculator", category: "electronics", kind: "trade", trade_wants_categories: ["textbooks"], trade_wants_text: "chemistry textbook", condition: "good", semester_moments: ["finals"] },
+  { id: L(1), tags: ["chemistry","ch-231"], tenant_id: UA, seller_id: alex,  title: "Organic Chemistry (Klein, 4e)", category: "textbooks", kind: "trade", trade_wants_categories: ["lab"], trade_wants_text: "goggles lab coat", condition: "good", semester_moments: ["semester_start"] },
+  { id: L(2), tags: ["lab","goggles"], tenant_id: UA, seller_id: blair, title: "Lab goggles + size M lab coat", category: "lab", kind: "trade", trade_wants_categories: ["electronics"], trade_wants_text: "graphing calculator", condition: "like_new", semester_moments: ["semester_start"] },
+  { id: L(3), tags: ["calculator","ti-84"], tenant_id: RB, seller_id: casey, title: "TI-84 Plus graphing calculator", category: "electronics", kind: "trade", trade_wants_categories: ["textbooks"], trade_wants_text: "chemistry textbook", condition: "good", semester_moments: ["finals"] },
   // Direct swap: Devon ↔ Alex
-  { id: L(4), tenant_id: RB, seller_id: devon, title: "Desk lamp with USB port", category: "dorm", kind: "trade", trade_wants_categories: ["textbooks"], condition: "good", semester_moments: ["move_in"] },
-  { id: L(5), tenant_id: UA, seller_id: alex,  title: "Intro Psych textbook", category: "textbooks", kind: "trade", trade_wants_categories: ["dorm"], condition: "fair", semester_moments: ["move_in"] },
+  { id: L(4), tags: ["lamp","dorm"], tenant_id: RB, seller_id: devon, title: "Desk lamp with USB port", category: "dorm", kind: "trade", trade_wants_categories: ["textbooks"], condition: "good", semester_moments: ["move_in"] },
+  { id: L(5), tags: ["psychology","psy-101"], tenant_id: UA, seller_id: alex,  title: "Intro Psych textbook", category: "textbooks", kind: "trade", trade_wants_categories: ["dorm"], condition: "fair", semester_moments: ["move_in"] },
   // Semester-aware sale items
-  { id: L(6), tenant_id: UA, seller_id: blair, title: "Mini fridge, pickup at move-out", category: "dorm", kind: "sale", price_cents: 6000, condition: "good", semester_moments: ["move_out", "move_in"], available_from: "2026-12-11", available_until: "2027-01-20", pickup_notes: "Ridgecrest lobby, evenings" },
-  { id: L(7), tenant_id: UA, seller_id: alex,  title: "Calc II tutoring before finals", category: "tutoring", kind: "service", price_cents: 2000, semester_moments: ["finals", "midterms"] },
-  { id: L(8), tenant_id: RB, seller_id: casey, title: "Ride to the airport, Dec 18", category: "rides", kind: "service", price_cents: 1500, semester_moments: ["move_out"] },
-  { id: L(9), tenant_id: RB, seller_id: devon, title: "Free shower caddy", category: "dorm", kind: "free", semester_moments: ["move_in"] },
+  { id: L(6), tags: ["fridge","dorm"], tenant_id: UA, seller_id: blair, title: "Mini fridge, pickup at move-out", category: "dorm", kind: "sale", price_cents: 6000, condition: "good", semester_moments: ["move_out", "move_in"], available_from: "2026-12-11", available_until: "2027-01-20", pickup_notes: "Ridgecrest lobby, evenings" },
+  { id: L(7), tags: ["calculus","tutoring"], tenant_id: UA, seller_id: alex,  title: "Calc II tutoring before finals", category: "tutoring", kind: "service", price_cents: 2000, semester_moments: ["finals", "midterms"] },
+  { id: L(8), tags: ["airport","rides"], tenant_id: RB, seller_id: casey, title: "Ride to the airport, Dec 18", category: "rides", kind: "service", price_cents: 1500, semester_moments: ["move_out"] },
+  { id: L(9), tags: ["free","dorm"], tenant_id: RB, seller_id: devon, title: "Free shower caddy", category: "dorm", kind: "free", semester_moments: ["move_in"] },
 ];
 const { error: le } = await admin.from("listings").upsert(listings, { onConflict: "id", ignoreDuplicates: true });
 if (le) throw le;
 
 const { error: re } = await admin.from("requests").upsert([
-  { id: "cccccccc-0000-4000-8000-000000000001", tenant_id: UA, requester_id: blair, title: "Need a chemistry textbook", category: "textbooks", budget_cents: 4000, visibility: "network" },
-  { id: "cccccccc-0000-4000-8000-000000000002", tenant_id: RB, requester_id: devon, title: "Looking for a mini fridge for spring", category: "dorm", budget_cents: 7000, visibility: "network", needed_by: "2027-01-15" },
+  { id: "cccccccc-0000-4000-8000-000000000001", tenant_id: UA, requester_id: blair, title: "Need a chemistry textbook", category: "textbooks", channel_id: "dddddddd-0000-4000-8000-000000000004", tags: ["chemistry"], budget_cents: 4000, visibility: "network" },
+  { id: "cccccccc-0000-4000-8000-000000000002", tenant_id: RB, requester_id: devon, title: "Looking for a mini fridge for spring", category: "dorm", channel_id: "dddddddd-0000-4000-8000-000000000005", tags: ["fridge"], budget_cents: 7000, visibility: "network", needed_by: "2027-01-15" },
 ], { onConflict: "id", ignoreDuplicates: true });
 if (re) throw re;
 

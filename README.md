@@ -18,6 +18,7 @@ structure, routes, tooling and deploy config come from `main`.
    It's for a **fresh** database only. For a new change, add the next numbered migration and run just that file.
 4. `npm install && npm run dev`
 5. Optional demo data: set `DEMO_USER_PASSWORD`, then `npm run seed:demo -- --yes`.
+6. `npm run db:test` runs the database tests in `supabase/tests/` (rolled back, leaves no data).
 
 **Vercel env vars:** the same ones as `.env.local`, **except** `SUPABASE_DB_URL` and `DEMO_USER_PASSWORD`.
 Set `NEXT_PUBLIC_APP_URL=https://hackbama-01.vercel.app`, and mark `SUPABASE_SECRET_KEY` and `VERIFICATION_PEPPER` as Sensitive.
@@ -88,9 +89,21 @@ To turn verification on, point the signup form back at `/api/auth/signup/start` 
   A new `.edu` school gets an active campus automatically on its first signup. Branding it means updating one row.
 - **Cross-campus:** a user's home campus and memberships are server-controlled. Browsing other campuses
   is a user setting (`user_settings`), and RLS decides what's visible and where you can post or make offers.
+- **Search:** `searchListings()` ranks by relevance when there's text. `#tags` typed in the query
+  become tag filters; it also sorts by newest or price. The same results feed the swipe deck.
+- **Tags:** every listing needs 1–10 tags (requests optional). Stored lowercase without `#` (`#ECE` → `ece`).
+- **Photos, videos and reels:** sellers upload their own files from the browser with `uploadListingMedia()`
+  (`lib/media/upload.ts`): photos go to `listing-images` (5 MB), videos to `listing-videos` (50 MB),
+  each in the uploader's own folder. A reel is a listing with `is_reel` and its video at position 0.
+  `mediaUrl()` builds the public URL.
 - **Swiping:** `swipe()` records pass / save / interest. Interest creates an **offer** to the seller.
-  A seller can respond to a **request** with one of their listings (`respond_to_request`).
-- **Conversations:** accepting an offer opens a private conversation (`respond_to_offer`). Messages are live via Realtime.
+  Saved listings: `getSavedListings()`.
+- **Request channels:** Reddit-style topics anyone can browse (`getChannels`, `getChannel`) or create
+  (`createChannel`, max 5 a day, unique names). Five starter channels ship with the migration.
+  A seller responds to a request with a listing or a message (`respond_to_request`).
+- **Conversations:** accepting an offer (on a listing or a request) opens a private chat between the two
+  people (`respond_to_offer`). No chat exists until the recipient accepts. Messages are live via Realtime.
+- **Seller tab / profiles:** `getMyListings`, `getMyRequests`, `getRequestsForMyListings`, `getPublicProfile`.
 - **Trades:** `find_trade_matches` / `propose_exchange` support 2–3 person trades across campuses.
 - **Security:** RLS on every exposed table; privileged logic runs in `security definer` SQL functions.
   The secret key is used only in server code (`lib/supabase/admin.ts`).
