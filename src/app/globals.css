@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Campus tokens are overridden per tenant by <CampusTheme>. */
+:root {
+  --campus: #2f5d8a;
+  --campus-foreground: #ffffff;
+  --campus-soft: #eaeff4;
+  --campus-strong: #234667;
+  --campus-accent: #5b6b7a;
+  --campus-accent-foreground: #ffffff;
+
+  --surface: #f5f6f8;
+  --card: #ffffff;
+  --ink: #14161b;
+  --muted-ink: #5e6670;
+  --line: #d9dde3;
+  --danger: #b42318;
+  --success: #1e7a46;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--surface);
+  --color-foreground: var(--ink);
+  --color-card: var(--card);
+  --color-card-foreground: var(--ink);
+  --color-primary: var(--campus);
+  --color-primary-foreground: var(--campus-foreground);
+  --color-secondary: var(--campus-soft);
+  --color-secondary-foreground: var(--campus-strong);
+  --color-accent: var(--campus-accent);
+  --color-accent-foreground: var(--campus-accent-foreground);
+  --color-muted: #eceef2;
+  --color-muted-foreground: var(--muted-ink);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--campus);
+  --color-destructive: var(--danger);
+  --color-success: var(--success);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+body { background: var(--surface); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--campus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
