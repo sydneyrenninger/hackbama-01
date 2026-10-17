@@ -44,3 +44,24 @@ export async function uploadListingMedia(file: File, listingId: string, position
   }
   return { ok: true, storagePath, mediaType: type.mediaType };
 }
+
+const AVATAR_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+
+/**
+ * Uploads a profile photo to the avatars bucket (2 MB, own folder) and returns its storage path.
+ * Save it with updateProfile({ displayName, avatarPath }).
+ */
+export async function uploadAvatar(file: File): Promise<{ ok: true; storagePath: string } | { ok: false; error: string }> {
+  const ext = AVATAR_TYPES[file.type];
+  if (!ext) return { ok: false, error: "Use a JPG, PNG or WebP photo." };
+  if (file.size > 2 * 1024 * 1024) return { ok: false, error: "Profile photos must be under 2 MB." };
+
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in to continue." };
+
+  const storagePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(storagePath, file, { contentType: file.type, upsert: false });
+  if (error) return { ok: false, error: "Upload failed. Try again." };
+  return { ok: true, storagePath };
+}

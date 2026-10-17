@@ -17,7 +17,7 @@ export const getAppContext = cache(async () => {
   if (!user) return null;
 
   const [profileRes, membershipsRes, settingsRes, scopeRes, tenantsRes] = await Promise.all([
-    supabase.from("profiles").select("id, display_name, avatar_path, bio, home_tenant_id, completed_trades").eq("id", user.id).single(),
+    supabase.from("profiles").select("id, display_name, avatar_path, bio, major, grad_year, onboarded, home_tenant_id, completed_trades").eq("id", user.id).single(),
     supabase.from("tenant_memberships").select("tenant_id, role, status").eq("user_id", user.id).eq("status", "active"),
     supabase.from("user_settings").select("browse_scope, browse_tenant_ids, active_tenant_id, arrival_date").eq("user_id", user.id).single(),
     supabase.rpc("my_browse_tenant_ids"),

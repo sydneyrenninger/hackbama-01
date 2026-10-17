@@ -28,12 +28,10 @@ export async function getAccount(): Promise<Account | null> {
   return { userId: user.id, email: user.email!, profile: profile as Profile, campus: campus as Campus };
 }
 
-// Same as getAccount, but redirects to /login if signed out.
-// TODO: once the /onboarding form exists, also redirect when !account.profile.onboarded:
-//   if (!account.profile.onboarded) redirect("/onboarding");
-// (Disabled for now: /onboarding redirects to /app, which would loop users away from /c/* and /account.)
+// Same as getAccount, but redirects to /login if signed out and /onboarding if the profile isn't set up.
 export async function requireAccount(): Promise<Account> {
   const account = await getAccount();
   if (!account) redirect("/login");
+  if (!account.profile.onboarded) redirect("/onboarding");
   return account;
 }

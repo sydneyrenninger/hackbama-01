@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
-import { CampusTheme } from "@/components/campus-theme";
+import { AppFrame } from "@/components/shell/app-frame";
 import { getCampus } from "@/lib/tenant";
-import { requireAccount } from "@/lib/auth";
 
-// Requires a signed-in, onboarded account. Loads the tenant being viewed (may differ from
-// the user's home campus — cross-campus browsing; RLS hides campuses you can't browse)
-// and applies its theme as CSS variables (bg-campus / bg-primary).
+// Everything under /c/[campus] gets the app frame (theme, header, tabs).
+// AppFrame requires an onboarded account; getCampus is RLS-filtered, so campuses you
+// can't browse 404.
 export default async function CampusLayout({
   children,
   params,
@@ -13,10 +12,9 @@ export default async function CampusLayout({
   children: React.ReactNode;
   params: Promise<{ campus: string }>;
 }) {
-  await requireAccount();
   const { campus: slug } = await params;
   const campus = await getCampus(slug);
   if (!campus) notFound();
 
-  return <CampusTheme tenant={campus}>{children}</CampusTheme>;
+  return <AppFrame campusSlug={campus.slug}>{children}</AppFrame>;
 }
