@@ -1,5 +1,5 @@
 import "server-only";
-import { Resend } from "resend";
+import nodemailer, { type Transporter } from "nodemailer";
 import { emailConfigured, serverEnv } from "@/lib/env";
 
 type SendResult = { ok: true } | { ok: false; reason: "not_configured" | "provider_error" };
@@ -7,18 +7,28 @@ type SendResult = { ok: true } | { ok: false; reason: "not_configured" | "provid
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+let transporter: Transporter | null = null;
+function transport(): Transporter {
+  if (!transporter) {
+    const env = serverEnv();
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: env.gmailUser, pass: env.gmailAppPassword },
+    });
+  }
+  return transporter;
+}
+
 async function send(to: string, subject: string, html: string, text: string): Promise<SendResult> {
   if (!emailConfigured()) return { ok: false, reason: "not_configured" };
-  const env = serverEnv();
   try {
-    const { error } = await new Resend(env.resendApiKey).emails.send({ from: env.emailFrom!, to, subject, html, text });
-    if (error) {
-      console.error("[email] provider rejected message", error.name);
-      return { ok: false, reason: "provider_error" };
-    }
+    await transport().sendMail({ from: `"Quad Exchange" <${serverEnv().gmailUser}>`, to, subject, html, text });
     return { ok: true };
   } catch (e) {
-    console.error("[email] provider request failed", e instanceof Error ? e.name : "unknown");
+    // Log the error code only; never the code being sent or credentials.
+    console.error("[email] SMTP send failed", (e as { code?: string })?.code ?? "unknown");
     return { ok: false, reason: "provider_error" };
   }
 }
