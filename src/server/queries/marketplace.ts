@@ -1,30 +1,124 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { parseSearch } from "@/lib/validation";
 
 export type ListingFilters = {
-  tenantIds: string[]; q?: string; category?: string; kind?: string;
-  maxPriceCents?: number; sort?: "new" | "price_asc" | "price_desc"; limit?: number;
+  tenantIds: string[];
+  q?: string;            // free text; "#tag" tokens become tag filters
+  tags?: string[];
+  category?: string; kind?: string; maxPriceCents?: number;
+  reelsOnly?: boolean;
+  sort?: "relevance" | "new" | "price_asc" | "price_desc";
+  limit?: number;
 };
 
 const LISTING_CARD = `id, title, category, kind, price_cents, condition, status, available_from, available_until,
-  semester_moments, created_at, tenant:tenants(id, short_name, primary_color),
+  semester_moments, tags, is_reel, created_at, tenant:tenants(id, slug, short_name, primary_color),
   seller:profiles!listings_seller_id_fkey(id, display_name, completed_trades),
-  images:listing_images(storage_path, position)`;
+  images:listing_images(storage_path, position, media_type)`;
 
+async function cardsInOrder(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase.from("listings").select(LISTING_CARD).in("id", ids);
+  if (error) throw new Error("listings_query_failed");
+  const byId = new Map((data ?? []).map((l) => [l.id, l]));
+  return ids.map((id) => byId.get(id)).filter((l): l is NonNullable<typeof l> => Boolean(l));
+}
+
+/** Buyer feed + search results (also the swipe deck for a search). Ranked by relevance when there's text. */
 export async function searchListings(f: ListingFilters) {
   const supabase = await createClient();
   if (f.tenantIds.length === 0) return [];
-  let q = supabase.from("listings").select(LISTING_CARD).eq("status", "active").in("tenant_id", f.tenantIds);
-  if (f.q?.trim()) q = q.textSearch("search", f.q.trim().slice(0, 100), { type: "websearch", config: "english" });
-  if (f.category) q = q.eq("category", f.category);
-  if (f.kind) q = q.eq("kind", f.kind);
-  if (f.maxPriceCents != null) q = q.lte("price_cents", f.maxPriceCents);
-  q = f.sort === "price_asc" ? q.order("price_cents", { ascending: true, nullsFirst: true })
-    : f.sort === "price_desc" ? q.order("price_cents", { ascending: false, nullsFirst: false })
-    : q.order("created_at", { ascending: false });
-  const { data, error } = await q.limit(Math.min(f.limit ?? 40, 100));
+  const { text, tags } = parseSearch(f.q ?? "");
+  const { data, error } = await supabase.rpc("search_listing_ids", {
+    p_tenant_ids: f.tenantIds,
+    p_query: text || null,
+    p_tags: [...tags, ...(f.tags ?? [])],
+    p_category: f.category ?? null,
+    p_kind: f.kind ?? null,
+    p_max_price: f.maxPriceCents ?? null,
+    p_reels_only: f.reelsOnly ?? false,
+    p_sort: f.sort ?? (text ? "relevance" : "new"),
+    p_limit: Math.min(f.limit ?? 40, 100),
+  });
   if (error) throw new Error("listings_query_failed");
-  return data;
+  return cardsInOrder(supabase, ((data ?? []) as { id: string }[]).map((r) => r.id));
+}
+
+/** Reels feed: newest listings flagged is_reel. */
+export async function getReels(tenantIds: string[], limit = 20) {
+  return searchListings({ tenantIds, reelsOnly: true, sort: "new", limit });
+}
+
+/** Listings the user swiped "save" on, newest first. */
+export async function getSavedListings(limit = 50) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase.from("listing_interactions").select("listing_id")
+    .eq("user_id", user.id).eq("action", "save").order("updated_at", { ascending: false }).limit(limit);
+  return cardsInOrder(supabase, (data ?? []).map((r) => r.listing_id));
+}
+
+/** Seller tab: my listings (all statuses except removed). */
+export async function getMyListings() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase.from("listings").select(LISTING_CARD)
+    .eq("seller_id", user.id).neq("status", "removed").order("created_at", { ascending: false }).limit(100);
+  return data ?? [];
+}
+
+/** My wanted requests. */
+export async function getMyRequests() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase.from("requests")
+    .select("id, title, description, category, tags, budget_cents, visibility, status, needed_by, created_at, channel:request_channels(id, slug, name)")
+    .eq("requester_id", user.id).order("created_at", { ascending: false }).limit(100);
+  return data ?? [];
+}
+
+/** Public profile (/u/[id]): profile, home campus, and their active listings. */
+export async function getPublicProfile(userId: string) {
+  const supabase = await createClient();
+  const { data: profile } = await supabase.from("profiles")
+    .select("id, display_name, avatar_path, bio, major, grad_year, completed_trades, created_at, campus:tenants!profiles_home_tenant_id_fkey(id, slug, name, short_name, primary_color)")
+    .eq("id", userId).maybeSingle();
+  if (!profile) return null;
+  const { data: listings } = await supabase.from("listings").select(LISTING_CARD)
+    .eq("seller_id", userId).eq("status", "active").order("created_at", { ascending: false }).limit(50);
+  return { profile, listings: listings ?? [] };
+}
+
+/** Tag chips for the search bar. */
+export async function getPopularTags(limit = 20) {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("popular_tags", { p_limit: limit });
+  return (data ?? []) as { tag: string; uses: number }[];
+}
+
+// ---- Request channels ------------------------------------------------
+
+/** Browse/search channels, busiest first. */
+export async function getChannels(query?: string, limit = 50) {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("list_channels", { p_query: query ?? null, p_limit: limit });
+  return (data ?? []) as { id: string; slug: string; name: string; description: string; open_requests: number; created_at: string }[];
+}
+
+/** One channel and its open requests (campus/network visibility still applies). */
+export async function getChannel(slug: string) {
+  const supabase = await createClient();
+  const { data: channel } = await supabase.from("request_channels")
+    .select("id, slug, name, description, created_at, creator:profiles(id, display_name)").eq("slug", slug).maybeSingle();
+  if (!channel) return null;
+  const { data: requests } = await supabase.from("requests")
+    .select("id, title, description, category, tags, budget_cents, visibility, needed_by, created_at, tenant:tenants(id, short_name), requester:profiles!requests_requester_id_fkey(id, display_name)")
+    .eq("channel_id", channel.id).eq("status", "open").order("created_at", { ascending: false }).limit(50);
+  return { channel, requests: requests ?? [] };
 }
 
 export async function getListing(id: string) {
@@ -43,7 +137,7 @@ export async function getDeck(limit = 20) {
 export async function getRequests(tenantIds: string[]) {
   const supabase = await createClient();
   const { data } = await supabase.from("requests")
-    .select("id, title, description, category, budget_cents, visibility, status, needed_by, created_at, tenant:tenants(id, short_name), requester:profiles!requests_requester_id_fkey(id, display_name)")
+    .select("id, title, description, category, tags, budget_cents, visibility, status, needed_by, created_at, channel:request_channels(id, slug, name), tenant:tenants(id, short_name), requester:profiles!requests_requester_id_fkey(id, display_name)")
     .in("tenant_id", tenantIds).eq("status", "open").order("created_at", { ascending: false }).limit(50);
   return data ?? [];
 }

@@ -7,6 +7,7 @@ import {
 import { normalizeEduEmail, domainCandidates, registrableEduDomain, maskEmail } from "../src/lib/email/normalize.ts";
 import { safeNext } from "../src/lib/auth/redirect.ts";
 import { contrastRatio, readableOn, themeVars } from "../src/lib/theme/colors.ts";
+import { listingInput, normalizeTag, parseSearch, requestInput } from "../src/lib/validation.ts";
 
 const PEPPER = "x".repeat(40);
 
@@ -80,4 +81,22 @@ test("theme picks accessible foregrounds", () => {
   const vars = themeVars({ primary_color: "#9E1B32", secondary_color: "#828A8F" });
   assert.equal(vars["--campus"], "#9E1B32");
   assert.equal(themeVars({ primary_color: "red", secondary_color: "x" })["--campus"], "#2F5D8A");
+});
+
+test("tags: normalized like SQL normalize_tags, required on listings, optional on requests", () => {
+  assert.equal(normalizeTag("  #ECE "), "ece");
+  const base = { title: "Blue dress", category: "clothing", kind: "sale", priceCents: 2000 } as const;
+  const ok = listingInput.safeParse({ ...base, tags: ["#Dress", "dress", "Formal-Wear"] });
+  assert.ok(ok.success);
+  assert.deepEqual(ok.success && ok.data.tags, ["dress", "formal-wear"]);
+  assert.equal(listingInput.safeParse({ ...base, tags: [] }).success, false);
+  assert.equal(listingInput.safeParse({ ...base, tags: ["no spaces"] }).success, false);
+  assert.equal(listingInput.safeParse({ ...base, tags: Array.from({ length: 11 }, (_, i) => `t${i}`) }).success, false);
+  assert.ok(requestInput.safeParse({ title: "Need a tutor", category: "tutoring" }).success);
+});
+
+test("search: #tags are pulled out of the query", () => {
+  assert.deepEqual(parseSearch("blue dress #Clothing #ua #clothing"), { text: "blue dress", tags: ["clothing", "ua"] });
+  assert.deepEqual(parseSearch("#textbook"), { text: "", tags: ["textbook"] });
+  assert.deepEqual(parseSearch("  mini   fridge "), { text: "mini fridge", tags: [] });
 });

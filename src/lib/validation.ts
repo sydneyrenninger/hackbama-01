@@ -41,6 +41,17 @@ export const newPasswordBody = z
   .refine((v) => v.password === v.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
 
 const uuid = z.string().uuid();
+
+// Tags: "#ECE " -> "ece". Mirrors normalize_tags()/tags_valid() in SQL.
+export function normalizeTag(raw: string): string {
+  return raw.trim().replace(/^#+/, "").toLowerCase();
+}
+export const TAG_PATTERN = /^[a-z0-9][a-z0-9-]{0,29}$/;
+const tags = z
+  .array(z.string())
+  .transform((list) => [...new Set(list.map(normalizeTag).filter(Boolean))])
+  .refine((list) => list.length <= 10, "Use up to 10 tags")
+  .refine((list) => list.every((t) => TAG_PATTERN.test(t)), "Tags can use letters, numbers and dashes (max 30 characters)");
 const category = z.enum(["textbooks", "dorm", "lab", "tickets", "tutoring", "rides", "electronics", "furniture", "clothing", "other"]);
 const moment = z.enum(["move_in", "semester_start", "midterms", "finals", "move_out", "anytime"]);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -60,6 +71,8 @@ export const listingInput = z
     semesterMoments: z.array(moment).max(6).default([]),
     tradeWantsCategories: z.array(category).max(5).default([]),
     tradeWantsText: z.string().trim().max(280).nullable().optional(),
+    tags: tags.refine((list) => list.length >= 1, "Add at least one tag"),
+    isReel: z.boolean().default(false),
   })
   .refine((v) => v.kind !== "sale" || (v.priceCents ?? 0) > 0, { message: "Add a price", path: ["priceCents"] })
   .refine((v) => v.kind !== "trade" || v.tradeWantsCategories.length > 0, {
@@ -74,7 +87,26 @@ export const requestInput = z.object({
   budgetCents: z.number().int().min(0).max(10_000_000).nullable().optional(),
   visibility: z.enum(["campus", "network"]).default("campus"),
   neededBy: isoDate.nullable().optional(),
+  tags: tags.default([]),
+  channelId: uuid.nullable().optional(),
 });
+
+export const channelInput = z.object({
+  name: z.string().trim().min(2, "Use at least 2 characters").max(40),
+  description: z.string().trim().max(280).default(""),
+});
+
+export const searchSort = z.enum(["relevance", "new", "price_asc", "price_desc"]);
+
+// "blue dress #clothing #ua" -> { text: "blue dress", tags: ["clothing", "ua"] }
+export function parseSearch(q: string): { text: string; tags: string[] } {
+  const tagsFound: string[] = [];
+  const text = q
+    .replace(/#([a-zA-Z0-9-]+)/g, (_, t: string) => { tagsFound.push(normalizeTag(t)); return " "; })
+    .replace(/\s+/g, " ")
+    .trim();
+  return { text, tags: [...new Set(tagsFound)] };
+}
 
 export const ids = { uuid };
 export const swipeInput = z.object({

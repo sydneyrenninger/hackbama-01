@@ -17,7 +17,7 @@ select public.provision_account('22222222-2222-4222-8222-222222222222', 'Ben');
 select is(public.provision_account('33333333-3333-4333-8333-333333333333', 'Cy'),
           'a1000000-0000-4000-8000-000000000002'::uuid, 'Riverbend user resolves to Riverbend');
 select isnt(public.provision_account('44444444-4444-4444-8444-444444444444', 'Dee'), null, 'unknown domain provisions a tenant');
-select is((select status::text from public.tenants where slug = 'newschool-edu'), 'pending', 'unknown domain tenant is pending');
+select is((select status::text from public.tenants where slug = 'newschool'), 'active', 'unknown domain tenant is active and named after the school');
 select is((select verified from public.tenant_domains where domain = 'newschool.edu'), false, 'unknown domain is not marked verified');
 
 -- Clients cannot call service-only functions ---------------------------
@@ -27,30 +27,30 @@ select throws_ok($$ select public.provision_account('11111111-1111-4111-8111-111
 select throws_ok($$ select * from private.verification_challenges $$, '42501', null, 'private schema is not reachable');
 
 -- Tenant isolation on writes -------------------------------------------
-select throws_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents)
-                    values ('a1000000-0000-4000-8000-000000000002', '11111111-1111-4111-8111-111111111111', 'Fake post', 'dorm', 'sale', 500) $$,
+select throws_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents, tags)
+                    values ('a1000000-0000-4000-8000-000000000002', '11111111-1111-4111-8111-111111111111', 'Fake post', 'dorm', 'sale', 500, '{test}') $$,
                  '42501', null, 'UA member cannot post into Riverbend');
-select throws_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents)
-                    values ('a1000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'Impersonation', 'dorm', 'sale', 500) $$,
+select throws_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents, tags)
+                    values ('a1000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'Impersonation', 'dorm', 'sale', 500, '{test}') $$,
                  '42501', null, 'cannot post as another user');
-select lives_ok($$ insert into public.listings (id, tenant_id, seller_id, title, category, kind, trade_wants_categories)
+select lives_ok($$ insert into public.listings (id, tenant_id, seller_id, title, category, kind, trade_wants_categories, tags)
                    values ('aaaaaaaa-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', '11111111-1111-4111-8111-111111111111',
-                           'Chem 101 textbook', 'textbooks', 'trade', '{lab}') $$, 'member can post at home');
+                           'Chem 101 textbook', 'textbooks', 'trade', '{lab}', '{chemistry}') $$, 'member can post at home');
 select throws_ok($$ update public.profiles set home_tenant_id = 'a1000000-0000-4000-8000-000000000002' where id = '11111111-1111-4111-8111-111111111111' $$,
                  '42501', null, 'cannot change own home tenant');
 
--- Pending-tenant member is browse-only -----------------------------------
+-- New-school member can post right away (main's behavior; was browse-only) --
 set local request.jwt.claims = '{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}';
-select throws_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents)
+select lives_ok($$ insert into public.listings (tenant_id, seller_id, title, category, kind, price_cents, tags)
                     values ((select home_tenant_id from public.profiles where id = '44444444-4444-4444-8444-444444444444'),
-                            '44444444-4444-4444-8444-444444444444', 'Mini fridge', 'dorm', 'sale', 4000) $$,
-                 '42501', null, 'pending campus member cannot post yet');
+                            '44444444-4444-4444-8444-444444444444', 'Mini fridge', 'dorm', 'sale', 4000, '{test}') $$,
+                 'new-school member can post at home');
 
 -- Cross-campus read + 3-way exchange -------------------------------------
 reset role;
-insert into public.listings (id, tenant_id, seller_id, title, category, kind, trade_wants_categories) values
-  ('aaaaaaaa-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'Lab goggles + coat', 'lab', 'trade', '{electronics}'),
-  ('aaaaaaaa-0000-4000-8000-000000000003', 'a1000000-0000-4000-8000-000000000002', '33333333-3333-4333-8333-333333333333', 'TI-84 calculator', 'electronics', 'trade', '{textbooks}');
+insert into public.listings (id, tenant_id, seller_id, title, category, kind, trade_wants_categories, tags) values
+  ('aaaaaaaa-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000001', '22222222-2222-4222-8222-222222222222', 'Lab goggles + coat', 'lab', 'trade', '{electronics}', '{goggles}'),
+  ('aaaaaaaa-0000-4000-8000-000000000003', 'a1000000-0000-4000-8000-000000000002', '33333333-3333-4333-8333-333333333333', 'TI-84 calculator', 'electronics', 'trade', '{textbooks}', '{calculator}');
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}';
 select ok(exists (select 1 from public.listings where id = 'aaaaaaaa-0000-4000-8000-000000000003'), 'UA user can browse Riverbend listing');

@@ -49,6 +49,8 @@ export type Listing = {
   semester_moments: SemesterMoment[];
   trade_wants_categories: Category[];
   trade_wants_text: string | null;
+  tags: string[];      // required, 1-10, lowercase (normalized in SQL)
+  is_reel: boolean;    // reel = video at position 0
   created_at: string;
 };
 
@@ -56,7 +58,8 @@ export type ListingImage = {
   id: string;
   listing_id: string;
   storage_path: string;
-  position: number;
+  position: number;         // 0 = cover
+  media_type: "image" | "video";  // bucket: listing-images / listing-videos
 };
 
 // "Wanted" posts
@@ -71,6 +74,18 @@ export type WantedRequest = {
   visibility: "campus" | "network";
   status: "open" | "fulfilled" | "closed";
   needed_by: string | null;
+  tags: string[];
+  channel_id: string | null;
+  created_at: string;
+};
+
+// Reddit-style topic for requests; anyone signed in can browse or create one
+export type RequestChannel = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  created_by: string | null;
   created_at: string;
 };
 

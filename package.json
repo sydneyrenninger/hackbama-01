@@ -12,7 +12,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "test:db": "npx supabase test db",
     "db:types": "npx supabase gen types typescript --linked > src/lib/database.types.ts",
-    "seed:demo": "node --env-file=.env.local --import tsx scripts/seed-demo.ts"
+    "seed:demo": "node --env-file=.env.local --import tsx scripts/seed-demo.ts",
+    "db:test": "bash scripts/db-test.sh"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.0",

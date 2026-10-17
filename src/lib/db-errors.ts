@@ -25,6 +25,10 @@ const MESSAGES: Record<string, string> = {
   exchange_not_open: "That trade is no longer open.",
   exchange_not_accepted: "Everyone has to accept the trade first.",
   not_allowed_to_trade: "Your campus membership doesn't allow trading yet.",
+  channel_name_invalid: "Channel names need 2 to 40 characters, including letters or numbers.",
+  channel_description_too_long: "Keep the description under 280 characters.",
+  channel_rate_limited: "You've created a lot of channels today. Try again tomorrow.",
+  channel_exists: "A channel with that name already exists.",
 };
 
 export function friendlyDbError(err: { message?: string; code?: string } | null | undefined): string {
