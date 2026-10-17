@@ -140,13 +140,13 @@ select is((select comments::int from public.comment_counts(array['f0000000-0000-
           'comment_counts counts comments per listing');
 
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000c3","role":"authenticated"}';
-select is((select count(*)::int from public.listing_comments), 1, 'comments are visible to other campuses that can see the listing');
-delete from public.listing_comments;  -- RLS: Cy may not delete, so this removes nothing
-select is((select count(*)::int from public.listing_comments), 1, 'other students cannot delete a comment');
+select is((select count(*)::int from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001'), 1, 'comments are visible to other campuses that can see the listing');
+delete from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001';  -- RLS: Cy may not delete, so this removes nothing
+select is((select count(*)::int from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001'), 1, 'other students cannot delete a comment');
 
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000a1","role":"authenticated"}';
 delete from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001';
-select is((select count(*)::int from public.listing_comments), 0, 'the listing''s seller can delete a comment on it');
+select is((select count(*)::int from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001'), 0, 'the listing''s seller can delete a comment on it');
 
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000b2","role":"authenticated"}';
 select lives_ok($$ insert into public.listing_comments (listing_id, author_id, body)
