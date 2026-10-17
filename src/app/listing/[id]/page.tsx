@@ -1,11 +1,11 @@
 import { notFound, redirect } from "next/navigation";
-import { CampusTheme } from "@/components/campus-theme";
 import type { ReelItem } from "@/components/reels/reel-panels";
 import { ReelViewer } from "@/components/reels/reel-viewer";
+import { AppFrame } from "@/components/shell/app-frame";
 import { ids } from "@/lib/validation";
 import { getAppContext } from "@/server/queries/context";
 import {
-  getCommentCounts, getListing, getSavedIds, getSavedListings, getSellerListings, searchListings,
+  getCommentCounts, getLikeState, getListing, getSavedIds, getSavedListings, getSellerListings, searchListings,
 } from "@/server/queries/marketplace";
 
 type SP = { c?: string; q?: string; category?: string; sort?: string; reels?: string; seller?: string; saved?: string };
@@ -47,7 +47,7 @@ export default async function ListingPage({ params, searchParams }: { params: Pr
   if (start < 0) { items = [clicked, ...items]; start = 0; }
 
   const listIds = items.map((l) => l.id);
-  const [savedIds, commentCounts] = await Promise.all([getSavedIds(listIds), getCommentCounts(listIds)]);
+  const [savedIds, commentCounts, likeState] = await Promise.all([getSavedIds(listIds), getCommentCounts(listIds), getLikeState(listIds)]);
 
   const keep = new URLSearchParams();
   for (const key of ["c", "q", "category", "sort", "reels", "seller", "saved"] as const) if (sp[key]) keep.set(key, sp[key]!);
@@ -55,11 +55,11 @@ export default async function ListingPage({ params, searchParams }: { params: Pr
   for (const key of ["q", "category", "sort"] as const) if (sp[key]) feed.set(key, sp[key]!);
   const backHref = sp.saved === "1" ? "/account" : sellerId ? `/u/${sellerId}` : `/c/${campusSlug}${feed.size ? `?${feed}` : ""}`;
 
-  const theme = tenant ?? clicked.tenant;
   return (
-    <CampusTheme tenant={theme ? { primary_color: theme.primary_color, secondary_color: theme.secondary_color } : null}>
+    <AppFrame campusSlug={campusSlug} immersive>
       <ReelViewer items={items} startIndex={start} currentUserId={ctx.user.id} savedIds={savedIds} commentCounts={commentCounts}
+        likeCounts={likeState.counts} likedIds={likeState.liked}
         backHref={backHref} inboxHref={`/c/${campusSlug}/matches`} query={keep.toString()} />
-    </CampusTheme>
+    </AppFrame>
   );
 }

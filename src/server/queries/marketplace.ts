@@ -155,6 +155,15 @@ export async function getCommentCounts(listingIds: string[]): Promise<Record<str
   return Object.fromEntries(((data ?? []) as { listing_id: string; comments: number }[]).map((r) => [r.listing_id, Number(r.comments)]));
 }
 
+/** Like counts and whether the current user liked each listing. */
+export async function getLikeState(listingIds: string[]): Promise<{ counts: Record<string, number>; liked: string[] }> {
+  if (listingIds.length === 0) return { counts: {}, liked: [] };
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("like_state", { p_listing_ids: listingIds });
+  const rows = (data ?? []) as { listing_id: string; likes: number; liked: boolean }[];
+  return { counts: Object.fromEntries(rows.map((r) => [r.listing_id, Number(r.likes)])), liked: rows.filter((r) => r.liked).map((r) => r.listing_id) };
+}
+
 export type ListingComment = {
   id: string; body: string; created_at: string;
   author: { id: string; display_name: string; avatar_path: string | null } | null;

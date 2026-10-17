@@ -2,11 +2,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bookmark, ChevronDown, ChevronUp, Eye, MessageCircle, Settings2, ShoppingBag, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Bookmark, ChevronDown, ChevronUp, Eye, Heart, MessageCircle, Settings2, ShoppingBag, Volume2, VolumeX } from "lucide-react";
 import { Avatar } from "@/components/shell/avatar";
 import { mediaUrl } from "@/lib/media/url";
 import { cn, formatPrice } from "@/lib/utils";
-import { setSaved } from "@/server/actions/offers";
+import { setLiked, setSaved } from "@/server/actions/offers";
 import { BUY_LABEL, BuyPanel, CommentsPanel, Sheet, ViewPanel, type ReelItem } from "./reel-panels";
 
 type Panel = { type: "view" | "buy" | "comments"; id: string } | null;
@@ -16,15 +16,18 @@ type Panel = { type: "view" | "buy" | "comments"; id: string } | null;
  * Starts at the listing you tapped; scroll for the rest of the search results.
  * The URL follows the listing on screen, so refresh/share lands on it.
  */
-export function ReelViewer({ items, startIndex, currentUserId, savedIds, commentCounts, backHref, inboxHref, query }: {
+export function ReelViewer({ items, startIndex, currentUserId, savedIds, commentCounts, likeCounts, likedIds, backHref, inboxHref, query }: {
   items: ReelItem[]; startIndex: number; currentUserId: string; savedIds: string[];
-  commentCounts: Record<string, number>; backHref: string; inboxHref: string; query: string;
+  commentCounts: Record<string, number>; likeCounts: Record<string, number>; likedIds: string[];
+  backHref: string; inboxHref: string; query: string;
 }) {
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(startIndex);
   const [muted, setMuted] = useState(true);
   const [saved, setSavedIds] = useState(() => new Set(savedIds));
+  const [liked, setLikedIds] = useState(() => new Set(likedIds));
+  const [likes, setLikes] = useState(likeCounts);
   const [counts, setCounts] = useState(commentCounts);
   const [panel, setPanel] = useState<Panel>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -71,6 +74,17 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
 
   const flash = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(null), 2500); };
 
+  async function toggleLike(id: string) {
+    const next = !liked.has(id);
+    const apply = (on: boolean) => {
+      setLikedIds((cur) => { const s = new Set(cur); if (on) s.add(id); else s.delete(id); return s; });
+      setLikes((c) => ({ ...c, [id]: Math.max(0, (c[id] ?? 0) + (on ? 1 : -1)) }));
+    };
+    apply(next);
+    const res = await setLiked(id, next);
+    if (!res.ok) { apply(!next); flash(res.error); }
+  }
+
   async function toggleSave(id: string) {
     const next = !saved.has(id);
     setSavedIds((cur) => { const s = new Set(cur); if (next) s.add(id); else s.delete(id); return s; });
@@ -87,11 +101,12 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
   const hasVideo = current?.images?.some((m) => m.media_type === "video");
 
   return (
-    <div className="fixed inset-0 z-50 bg-black text-white">
+    <div className="absolute inset-0 bg-black text-white">
       <div ref={scroller} role="feed" aria-label="Listings" className="h-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item, i) => (
           <Slide key={item.id} item={item} index={i} total={items.length} active={i === active} near={Math.abs(i - active) <= 1} muted={muted}
             saved={saved.has(item.id)} commentCount={counts[item.id] ?? 0} mine={item.seller_id === currentUserId}
+            liked={liked.has(item.id)} likeCount={likes[item.id] ?? 0} onToggleLike={() => toggleLike(item.id)}
             onPanel={(type) => setPanel({ type, id: item.id })} onToggleSave={() => toggleSave(item.id)} />
         ))}
       </div>
@@ -124,9 +139,10 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
   );
 }
 
-function Slide({ item, index, total, active, near, muted, saved, commentCount, mine, onPanel, onToggleSave }: {
+function Slide({ item, index, total, active, near, muted, saved, commentCount, mine, liked, likeCount, onToggleLike, onPanel, onToggleSave }: {
   item: ReelItem; index: number; total: number; active: boolean; near: boolean; muted: boolean; saved: boolean;
-  commentCount: number; mine: boolean; onPanel: (t: "view" | "buy" | "comments") => void; onToggleSave: () => void;
+  commentCount: number; mine: boolean; liked: boolean; likeCount: number; onToggleLike: () => void;
+  onPanel: (t: "view" | "buy" | "comments") => void; onToggleSave: () => void;
 }) {
   const price = formatPrice(item.price_cents, item.kind);
   const sold = item.status === "sold";
@@ -158,7 +174,10 @@ function Slide({ item, index, total, active, near, muted, saved, commentCount, m
           </div>
         </div>
 
-        <div className="absolute bottom-24 right-2 flex flex-col items-center gap-4">
+        <div className="absolute bottom-20 right-2 flex flex-col items-center gap-3.5">
+          <RailButton label={likeCount ? String(likeCount) : "Like"} ariaLabel={`${liked ? "Unlike" : "Like"} (${likeCount} likes)`} onClick={onToggleLike} pressed={liked}>
+            <Heart className={cn("h-6 w-6", liked && "fill-red-500 text-red-500")} aria-hidden />
+          </RailButton>
           <RailButton label="View" onClick={() => onPanel("view")}><Eye className="h-6 w-6" aria-hidden /></RailButton>
           {mine ? (
             <Link href={`/c/${item.tenant?.slug ?? ""}/sell`} className="flex flex-col items-center gap-1 text-xs font-semibold">

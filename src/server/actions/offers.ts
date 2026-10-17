@@ -16,6 +16,18 @@ export async function swipe(input: z.input<typeof swipeInput>): Promise<ActionRe
   return { ok: true, data: { offerId: (data as { offer_id: string | null })?.offer_id ?? null } };
 }
 
+/** Like or unlike a listing (the heart in the reel viewer). */
+export async function setLiked(listingId: string, liked: boolean): Promise<ActionResult> {
+  const { supabase, user } = await authed();
+  if (!user) return fail("Sign in to continue.");
+  if (!ids.uuid.safeParse(listingId).success) return fail("Listing not found.");
+  const { error } = liked
+    ? await supabase.from("listing_likes").upsert({ user_id: user.id, listing_id: listingId }, { onConflict: "user_id,listing_id", ignoreDuplicates: true })
+    : await supabase.from("listing_likes").delete().eq("user_id", user.id).eq("listing_id", listingId);
+  if (error) return fail(error);
+  return { ok: true };
+}
+
 /** Save or unsave a listing (the bookmark in the reel viewer). */
 export async function setSaved(listingId: string, saved: boolean): Promise<ActionResult> {
   const { supabase, user } = await authed();

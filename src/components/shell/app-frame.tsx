@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 import { CampusTheme } from "@/components/campus-theme";
 import { createClient } from "@/lib/supabase/server";
 import { getAppContext } from "@/server/queries/context";
@@ -12,9 +12,10 @@ import { CampusSwitcher } from "./campus-switcher";
  * Signed-in page frame: campus theme, header (logo, campus switcher, account), bottom tabs.
  * - campusSlug: the campus being viewed (/c/[campus]); omit on /account, /u/[id], /communities
  *   and the user's active campus is used.
+ * - immersive: header only, children fill the rest of the screen (no bottom tabs).
  * - Sends signed-out users to /login and un-onboarded users to /onboarding.
  */
-export async function AppFrame({ campusSlug, children }: { campusSlug?: string; children: React.ReactNode }) {
+export async function AppFrame({ campusSlug, immersive = false, children }: { campusSlug?: string; immersive?: boolean; children: React.ReactNode }) {
   const ctx = await getAppContext();
   if (!ctx) redirect("/login");
   if (!ctx.profile) {
@@ -38,21 +39,38 @@ export async function AppFrame({ campusSlug, children }: { campusSlug?: string; 
   ]);
   const unread = ((convs.data ?? []) as { unread_count?: number }[]).reduce((n: number, c) => n + (c.unread_count ?? 0), 0);
 
+  const header = (
+    <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:gap-3">
+        <Link href={`/c/${tenant.slug}`} className="whitespace-nowrap font-display text-xl font-extrabold text-primary sm:text-2xl">Bama Buy</Link>
+        <CampusSwitcher current={tenant.slug} options={options} />
+        <span className="flex-1" />
+        <Link href="/dashboard" className="flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground">
+          <LayoutDashboard className="h-5 w-5" aria-hidden /><span className="hidden sm:inline">Dashboard</span><span className="sr-only sm:hidden">Dashboard</span>
+        </Link>
+        <Link href="/communities" aria-label="All campuses" className="hidden h-10 w-10 place-items-center rounded-full text-muted-foreground hover:bg-muted sm:grid">
+          <Users className="h-5 w-5" aria-hidden />
+        </Link>
+        <Link href="/dashboard" aria-label="Your dashboard" className="shrink-0">
+          <Avatar name={ctx.profile.display_name} path={ctx.profile.avatar_path} size="sm" />
+        </Link>
+      </div>
+    </header>
+  );
+
+  // Immersive pages (the reel viewer) get the header on top and fill the rest of the screen.
+  if (immersive) {
+    return (
+      <CampusTheme tenant={tenant} className="flex h-dvh flex-col overflow-hidden">
+        {header}
+        <div className="relative min-h-0 flex-1">{children}</div>
+      </CampusTheme>
+    );
+  }
+
   return (
     <CampusTheme tenant={tenant} className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link href={`/c/${tenant.slug}`} className="whitespace-nowrap font-display text-xl font-extrabold text-primary sm:text-2xl">Bama Buy</Link>
-          <CampusSwitcher current={tenant.slug} options={options} />
-          <span className="flex-1" />
-          <Link href="/communities" aria-label="All campuses" className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground hover:bg-muted">
-            <Users className="h-5 w-5" aria-hidden />
-          </Link>
-          <Link href="/dashboard" aria-label="Your dashboard">
-            <Avatar name={ctx.profile.display_name} path={ctx.profile.avatar_path} size="sm" />
-          </Link>
-        </div>
-      </header>
+      {header}
       <main className="mx-auto max-w-5xl px-4 pb-28 pt-6">{children}</main>
       <BottomNav slug={tenant.slug} inboxBadge={(pending.count ?? 0) + unread} />
     </CampusTheme>
