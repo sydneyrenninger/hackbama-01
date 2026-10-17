@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root {
+  --campus-primary: #9e1b32;
+  --campus-secondary: #ffffff;
+}
+
+@theme inline {
+  --color-campus: var(--campus-primary);
+  --color-campus-2: var(--campus-secondary);
+}
