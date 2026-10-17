@@ -55,10 +55,33 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
     if (it) window.history.replaceState(window.history.state, "", `/listing/${it.id}${query ? `?${query}` : ""}`);
   }, [active, items, query]);
 
+  // Move exactly one post up/down from the post currently snapped into view.
   const go = useCallback((delta: number) => {
     const root = scroller.current;
-    if (root) root.scrollBy({ top: delta * root.clientHeight, behavior: "smooth" });
+    if (!root) return;
+    const h = root.clientHeight;
+    const target = Math.min(root.children.length - 1, Math.max(0, Math.round(root.scrollTop / h) + delta));
+    root.scrollTo({ top: target * h, behavior: "smooth" });
   }, []);
+
+  // Mouse wheel / trackpad: one gesture = one post (native snapping needs you to scroll past halfway,
+  // which felt like dragging the reel before it moved). Momentum events from the same flick are ignored.
+  useEffect(() => {
+    const root = scroller.current;
+    if (!root) return;
+    let lockUntil = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // sideways: photo carousel
+      e.preventDefault();
+      const now = Date.now();
+      if (now < lockUntil) { lockUntil = Math.max(lockUntil, now + 250); return; } // still the same flick
+      if (Math.abs(e.deltaY) < 2) return;
+      lockUntil = now + 650;
+      go(e.deltaY > 0 ? 1 : -1);
+    };
+    root.addEventListener("wheel", onWheel, { passive: false });
+    return () => root.removeEventListener("wheel", onWheel);
+  }, [go]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -102,7 +125,7 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
 
   return (
     <div className="absolute inset-0 bg-black text-white">
-      <div ref={scroller} role="feed" aria-label="Listings" className="h-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div ref={scroller} role="feed" aria-label="Listings" className="h-full snap-y snap-mandatory overflow-y-scroll overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item, i) => (
           <Slide key={item.id} item={item} index={i} total={items.length} active={i === active} near={Math.abs(i - active) <= 1} muted={muted}
             saved={saved.has(item.id)} commentCount={counts[item.id] ?? 0} mine={item.seller_id === currentUserId}
@@ -147,7 +170,7 @@ function Slide({ item, index, total, active, near, muted, saved, commentCount, m
   const price = formatPrice(item.price_cents, item.kind);
   const sold = item.status === "sold";
   return (
-    <section data-index={index} aria-label={`${item.title}, ${index + 1} of ${total}`} className="relative h-full w-full snap-start snap-always">
+    <section data-index={index} aria-label={`${item.title}, ${index + 1} of ${total}`} className="relative h-full w-full snap-start snap-always overflow-hidden">
       <div className="relative mx-auto h-full w-full max-w-[480px] overflow-hidden bg-neutral-950">
         <MediaCarousel item={item} active={active} near={near} muted={muted} />
 
@@ -229,13 +252,15 @@ function MediaCarousel({ item, active, near, muted }: { item: ReelItem; active: 
   return (
     <>
       <div ref={ref} onScroll={(e) => setIdx(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {media.map((m, i) => (
-          <div key={m.storage_path} className="grid h-full w-full shrink-0 snap-center place-items-center">
+          // Media is absolutely positioned so it can never be taller than the screen: a too-tall
+          // slide lets the browser scroll inside it before snapping, which felt like a lag.
+          <div key={m.storage_path} className="relative h-full w-full shrink-0 snap-center overflow-hidden">
             {m.media_type === "video"
               ? <ReelVideo src={mediaUrl(m.storage_path, "video")} play={active && i === idx} load={near} muted={muted} label={item.title} />
               // eslint-disable-next-line @next/next/no-img-element -- public storage URL
-              : <img src={mediaUrl(m.storage_path, "image")} alt={i === 0 ? item.title : `${item.title}, photo ${i + 1}`} loading={near ? "eager" : "lazy"} className="max-h-full w-full object-contain" />}
+              : <img src={mediaUrl(m.storage_path, "image")} alt={i === 0 ? item.title : `${item.title}, photo ${i + 1}`} loading={near ? "eager" : "lazy"} className="absolute inset-0 h-full w-full object-contain" />}
           </div>
         ))}
       </div>
@@ -261,6 +286,6 @@ function ReelVideo({ src, play, load, muted, label }: { src: string; play: boole
   useEffect(() => { if (!play) setPaused(false); }, [play]);
   return (
     <video ref={ref} src={load ? src : undefined} muted={muted} loop playsInline preload={load ? "auto" : "none"} aria-label={`Video: ${label}`}
-      onClick={() => setPaused((p) => !p)} className="h-full w-full object-contain" />
+      onClick={() => setPaused((p) => !p)} className="absolute inset-0 h-full w-full object-contain" />
   );
 }
