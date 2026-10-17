@@ -13,6 +13,7 @@ structure, routes, tooling and deploy config come from `main`.
 2. `cp .env.example .env.local` and fill it in (see the comments in the file):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`
    - `SUPABASE_SECRET_KEY` (server only, creates accounts) and `VERIFICATION_PEPPER` (32+ random chars)
+   - `GMAIL_USER`, `GMAIL_APP_PASSWORD` (team Gmail + 16-char App Password; sends codes and reset links)
    - `SUPABASE_DB_URL` (local only, for `db:setup`)
 3. `npm run db:setup` runs every file in `supabase/migrations/` in order, then `supabase/seed.sql`.
    It's for a **fresh** database only. For a new change, add the next numbered migration and run just that file.
@@ -30,8 +31,8 @@ src/
   app/
     page.tsx                  landing (empty)
     (auth)/login/             .edu email + password sign-in
-    signup/                   one-step signup (email, display name, password)
-    forgot-password/, reset-password/, auth/confirm/   password reset (needs email; see below)
+    signup/                   signup: .edu email → 6-digit code → display name + password
+    forgot-password/, reset-password/, auth/confirm/   password reset by email link
     onboarding/               first-run profile: major, grad year (actions.ts: completeOnboarding)
     app/                      signed-in home + campus switcher
     account/                  my profile, listings, requests
@@ -41,9 +42,9 @@ src/
       layout.tsx              requires an onboarded account, applies the campus theme
       swipe/ reels/ requests/ matches/ sell/
     api/
-      auth/signup             one-step signup (no email code)
+      auth/signup/start|verify|complete   send code → check code → create account
       auth/signin, signout    password auth
-      auth/signup/start|verify|complete, recovery/*   email-based flows, unused until email is on
+      auth/recovery/*, auth/password      password reset
       swipe/                  swipe a listing (pass / save / interest) or respond to a request
   components/
     auth/                     sign-in, signup, password field, auth layout
@@ -73,15 +74,16 @@ tests/core.test.ts            unit tests (`npm test`)
 
 ## Accounts
 
-Sign up with any `.edu` email and a password. The account is created right away (no email check yet)
-and tied to that school's campus. Then `/onboarding`, then the app.
+Sign up with any `.edu` email: we email a 6-digit code (Gmail SMTP), then you set a display name and
+password. The account is tied to that school's campus. `/onboarding` currently redirects to `/app`
+until its form exists (campus pages under `/c/` still require a finished onboarding).
 Every route except `/`, `/login`, `/signup`, password reset and `/api/auth/*` requires an account.
 In server code, call `requireAccount()` to get `{ userId, email, profile, campus }`, or `getAppContext()`
 for browse scope, memberships and the active campus.
 
-**Email is skipped for now.** Signup doesn't verify the inbox, and password reset won't send
-anything until Resend is configured (`RESEND_API_KEY`, `EMAIL_FROM` with a verified domain).
-To turn verification on, point the signup form back at `/api/auth/signup/start` → `verify` → `complete`.
+**Email** goes through a team Gmail account (`GMAIL_USER`, `GMAIL_APP_PASSWORD`). Without those set,
+signup can't send codes (the start route returns a clear 503) and password reset sends nothing.
+Gmail allows roughly 500 emails a day.
 
 ## How the backend works
 
