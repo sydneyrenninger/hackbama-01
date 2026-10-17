@@ -24,19 +24,19 @@ export function SellerListingActions({ listingId, status }: { listingId: string;
       {status === "sold" ? (
         <Button size="sm" variant="outline" disabled={pending} onClick={() => set("active")}>Relist</Button>
       ) : (
-        <Button size="sm" disabled={pending} onClick={() => set("sold")}>Mark sold</Button>
+        <Button size="sm" variant="secondary" disabled={pending} onClick={() => set("sold")}>Mark sold</Button>
       )}
       {confirmRemove ? (
         <>
-          <Button size="sm" variant="outline" className="border-destructive text-destructive" disabled={pending} onClick={() => set("removed")}>
+          <Button size="sm" variant="outline" className="border-destructive bg-destructive text-white" disabled={pending} onClick={() => set("removed")}>
             Yes, remove
           </Button>
           <Button size="sm" variant="ghost" disabled={pending} onClick={() => setConfirmRemove(false)}>Cancel</Button>
         </>
       ) : (
-        <Button size="sm" variant="ghost" disabled={pending} onClick={() => setConfirmRemove(true)}>Remove</Button>
+        <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" disabled={pending} onClick={() => setConfirmRemove(true)}>Remove</Button>
       )}
-      {error && <span role="alert" className="text-sm text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-sm font-bold text-destructive">{error}</span>}
     </div>
   );
 }

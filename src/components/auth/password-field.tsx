@@ -14,7 +14,7 @@ export function PasswordField({ label, value, onChange, autoComplete, error, des
   const [visible, setVisible] = useState(false);
   const errId = `${id}-err`;
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <Input id={id} name={name} type={visible ? "text" : "password"} value={value} autoComplete={autoComplete}
@@ -22,12 +22,12 @@ export function PasswordField({ label, value, onChange, autoComplete, error, des
           aria-describedby={[error ? errId : null, describedBy].filter(Boolean).join(" ") || undefined}
           className="pr-12" />
         <button type="button" onClick={() => setVisible((v) => !v)}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+          className="absolute inset-y-0 right-1 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-ink"
           aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-pressed={visible}>
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
-      {error && <p id={errId} className="text-sm text-destructive">{error}</p>}
+      {error && <p id={errId} className="text-sm font-bold text-destructive">{error}</p>}
     </div>
   );
 }

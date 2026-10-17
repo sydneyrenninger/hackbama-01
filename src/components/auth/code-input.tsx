@@ -17,15 +17,17 @@ export function CodeInput({ value, onChange, onComplete, invalid, disabled }: {
   const focus = (i: number) => refs.current[Math.max(0, Math.min(5, i))]?.focus();
 
   return (
-    <div className="flex gap-2 sm:gap-3" role="group" aria-label="6-digit verification code">
+    <div className="flex gap-2 sm:gap-2.5" role="group" aria-label="6-digit verification code">
       {digits.map((d, i) => (
         <input key={i} ref={(el) => { refs.current[i] = el; }}
           inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} pattern="\d*" maxLength={6}
           aria-label={`Digit ${i + 1}`} aria-invalid={invalid} disabled={disabled} value={d}
           className={cn(
-            "h-16 w-12 rounded-lg border-2 bg-card text-center font-display text-3xl font-bold tabular-nums outline-none transition-colors sm:h-[4.5rem] sm:w-14",
-            d ? "border-primary" : "border-border", "focus:border-primary focus:bg-secondary",
-            invalid && "border-destructive",
+            "h-16 w-full min-w-0 rounded-xl border-2 border-ink bg-card text-center font-display text-3xl font-extrabold tabular-nums outline-none transition-all duration-150 sm:h-[4.5rem]",
+            d ? "-translate-y-0.5 bg-pop shadow-brut-sm" : "",
+            "focus:-translate-y-1 focus:shadow-[3px_3px_0_0_var(--campus)]",
+            invalid && "border-destructive bg-destructive/10 shadow-none",
+            i === 2 && "mr-2 sm:mr-3",
           )}
           onChange={(e) => {
             const typed = e.target.value.replace(/\D/g, "");

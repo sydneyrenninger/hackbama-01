@@ -11,6 +11,8 @@ import { BUY_LABEL, BuyPanel, CommentsPanel, Sheet, ViewPanel, type ReelItem } f
 
 type Panel = { type: "view" | "buy" | "comments"; id: string } | null;
 
+const glass = "grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md transition-colors hover:bg-black/70";
+
 /**
  * Full-screen, vertically snapping feed of listings (YouTube Shorts / Reels style).
  * Starts at the listing you tapped; scroll for the rest of the search results.
@@ -124,7 +126,7 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
   const hasVideo = current?.images?.some((m) => m.media_type === "video");
 
   return (
-    <div className="absolute inset-0 bg-black text-white">
+    <div className="absolute inset-0 bg-[#0d0c0a] text-white">
       <div ref={scroller} role="feed" aria-label="Listings" className="h-full snap-y snap-mandatory overflow-y-scroll overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item, i) => (
           <Slide key={item.id} item={item} index={i} total={items.length} active={i === active} near={Math.abs(i - active) <= 1} muted={muted}
@@ -134,22 +136,31 @@ export function ReelViewer({ items, startIndex, currentUserId, savedIds, comment
         ))}
       </div>
 
-      <Link href={backHref} aria-label="Back" className="absolute left-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70">
-        <ArrowLeft className="h-5 w-5" aria-hidden />
-      </Link>
+      <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
+        <Link href={backHref} aria-label="Back" className={glass}>
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </Link>
+        <span aria-hidden className="eyebrow rounded-full border border-white/20 bg-black/40 px-2.5 py-1.5 text-[10px] tabular-nums text-white/85 backdrop-blur-md">
+          {String(active + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
+        </span>
+      </div>
       {hasVideo && (
         <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Turn sound on" : "Mute"} aria-pressed={!muted}
-          className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-black/50 backdrop-blur hover:bg-black/70">
+          className={cn(glass, "absolute right-3 top-3 z-10")}>
           {muted ? <VolumeX className="h-5 w-5" aria-hidden /> : <Volume2 className="h-5 w-5" aria-hidden />}
         </button>
       )}
-      <div className="absolute right-3 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-2 md:flex">
+      <div className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-2 md:flex">
         <button type="button" onClick={() => go(-1)} disabled={active === 0} aria-label="Previous listing"
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-30"><ChevronUp className="h-5 w-5" aria-hidden /></button>
+          className="grid h-12 w-12 place-items-center rounded-full border-2 border-white/25 bg-white/10 transition-all hover:-translate-y-0.5 hover:bg-white/20 disabled:opacity-25"><ChevronUp className="h-5 w-5" aria-hidden /></button>
         <button type="button" onClick={() => go(1)} disabled={active === items.length - 1} aria-label="Next listing"
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/15 hover:bg-white/25 disabled:opacity-30"><ChevronDown className="h-5 w-5" aria-hidden /></button>
+          className="grid h-12 w-12 place-items-center rounded-full border-2 border-white/25 bg-white/10 transition-all hover:translate-y-0.5 hover:bg-white/20 disabled:opacity-25"><ChevronDown className="h-5 w-5" aria-hidden /></button>
       </div>
-      {toast && <p role="status" className="absolute left-1/2 top-16 z-20 -translate-x-1/2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black shadow-lg">{toast}</p>}
+      {toast && (
+        <p role="status" className="absolute left-1/2 top-16 z-20 -translate-x-1/2 animate-pop rounded-full border-2 border-ink bg-pop px-4 py-2 font-display text-sm font-extrabold text-ink shadow-brut">
+          {toast}
+        </p>
+      )}
 
       {panel && panelItem && (
         <Sheet title={panel.type === "view" ? "Details" : panel.type === "buy" ? (BUY_LABEL[panelItem.kind] ?? "Buy") : "Comments"} onClose={() => setPanel(null)}>
@@ -171,40 +182,41 @@ function Slide({ item, index, total, active, near, muted, saved, commentCount, m
   const sold = item.status === "sold";
   return (
     <section data-index={index} aria-label={`${item.title}, ${index + 1} of ${total}`} className="relative h-full w-full snap-start snap-always overflow-hidden">
-      <div className="relative mx-auto h-full w-full max-w-[480px] overflow-hidden bg-neutral-950">
+      <div className="relative mx-auto h-full w-full max-w-[480px] overflow-hidden bg-neutral-950 md:border-x-2 md:border-white/10">
         <MediaCarousel item={item} active={active} near={near} muted={muted} />
 
-        {sold && <span className="absolute left-16 top-4 rounded-full bg-white px-3 py-1 text-sm font-bold text-black">Sold</span>}
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 pb-6 pr-20 pt-28">
-          <div className="pointer-events-auto space-y-2">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent px-4 pb-7 pr-20 pt-36">
+          <div className={cn("pointer-events-auto space-y-2.5 transition-all duration-500", active ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0")}>
             {item.seller && (
-              <Link href={`/u/${item.seller.id}`} className="flex w-fit items-center gap-2 hover:underline">
-                <Avatar name={item.seller.display_name} path={item.seller.avatar_path} size="sm" className="ring-2 ring-white/70" />
-                <span className="font-semibold">{item.seller.display_name}</span>
-                {item.tenant && <span className="text-sm text-white/70">· {item.tenant.short_name}</span>}
+              <Link href={`/u/${item.seller.id}`} className="flex w-fit items-center gap-2 rounded-full bg-black/30 py-1 pl-1 pr-3 backdrop-blur-sm transition-colors hover:bg-black/50">
+                <Avatar name={item.seller.display_name} path={item.seller.avatar_path} size="sm" className="border-white" />
+                <span className="text-sm font-bold">{item.seller.display_name}</span>
+                {item.tenant && <span className="eyebrow text-[9px] text-white/60">{item.tenant.short_name}</span>}
               </Link>
             )}
-            <h2 className="font-display text-xl font-bold leading-snug">{item.title}</h2>
-            {price && <p className="w-fit rounded-full bg-white px-3 py-0.5 text-sm font-bold text-black">{price}</p>}
+            <div className="flex flex-wrap items-center gap-2">
+              {sold && <span className="-rotate-6 rounded-md border-2 border-red-400 px-2 py-0.5 font-display text-sm font-extrabold uppercase tracking-widest text-red-300">Sold</span>}
+              {price && <span className="sticker -rotate-3 text-base">{price}</span>}
+            </div>
+            <h2 className="font-display text-[1.7rem] font-extrabold leading-[1.02] tracking-[-0.035em]">{item.title}</h2>
             {item.description && (
-              <button type="button" onClick={() => onPanel("view")} className="block text-left text-sm text-white/90">
+              <button type="button" onClick={() => onPanel("view")} className="block text-left text-sm leading-relaxed text-white/85">
                 <span className="line-clamp-2">{item.description}</span>
-                {item.description.length > 90 && <span className="font-semibold text-white">more</span>}
+                {item.description.length > 90 && <span className="font-bold text-pop">more</span>}
               </button>
             )}
-            {item.tags.length > 0 && <p className="truncate text-sm font-semibold text-white/90">{item.tags.map((t) => `#${t}`).join(" ")}</p>}
+            {item.tags.length > 0 && <p className="eyebrow truncate text-[10px] text-white/75">{item.tags.map((t) => `#${t}`).join("  ")}</p>}
           </div>
         </div>
 
-        <div className="absolute bottom-20 right-2 flex flex-col items-center gap-3.5">
+        <div className="absolute bottom-20 right-2.5 flex flex-col items-center gap-3.5">
           <RailButton label={likeCount ? String(likeCount) : "Like"} ariaLabel={`${liked ? "Unlike" : "Like"} (${likeCount} likes)`} onClick={onToggleLike} pressed={liked}>
-            <Heart className={cn("h-6 w-6", liked && "fill-red-500 text-red-500")} aria-hidden />
+            <Heart className={cn("h-6 w-6 transition-transform", liked && "scale-110 fill-red-500 text-red-500")} aria-hidden />
           </RailButton>
           <RailButton label="View" onClick={() => onPanel("view")}><Eye className="h-6 w-6" aria-hidden /></RailButton>
           {mine ? (
-            <Link href={`/c/${item.tenant?.slug ?? ""}/sell`} className="flex flex-col items-center gap-1 text-xs font-semibold">
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-white/15 backdrop-blur"><Settings2 className="h-6 w-6" aria-hidden /></span>Manage
+            <Link href={`/c/${item.tenant?.slug ?? ""}/sell`} className="flex flex-col items-center gap-1 text-[11px] font-bold">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md"><Settings2 className="h-6 w-6" aria-hidden /></span>Manage
             </Link>
           ) : (
             <RailButton label={BUY_LABEL[item.kind] ?? "Buy"} onClick={() => onPanel("buy")} disabled={sold} highlight>
@@ -212,7 +224,7 @@ function Slide({ item, index, total, active, near, muted, saved, commentCount, m
             </RailButton>
           )}
           <RailButton label={saved ? "Saved" : "Save"} onClick={onToggleSave} pressed={saved}>
-            <Bookmark className={cn("h-6 w-6", saved && "fill-current")} aria-hidden />
+            <Bookmark className={cn("h-6 w-6 transition-transform", saved && "scale-110 fill-pop text-pop")} aria-hidden />
           </RailButton>
           <RailButton label={commentCount ? String(commentCount) : "Comment"} ariaLabel={`Comments (${commentCount})`} onClick={() => onPanel("comments")}>
             <MessageCircle className="h-6 w-6" aria-hidden />
@@ -228,9 +240,9 @@ function RailButton({ label, ariaLabel, onClick, pressed, disabled, highlight, c
 }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-pressed={pressed} aria-label={ariaLabel ?? label}
-      className="flex flex-col items-center gap-1 text-xs font-semibold drop-shadow disabled:opacity-40">
-      <span className={cn("grid h-12 w-12 place-items-center rounded-full backdrop-blur transition-colors",
-        highlight ? "bg-primary text-primary-foreground" : "bg-white/15 hover:bg-white/25")}>{children}</span>
+      className="group flex flex-col items-center gap-1 text-[11px] font-bold drop-shadow disabled:opacity-40">
+      <span className={cn("grid h-12 w-12 place-items-center rounded-2xl backdrop-blur-md transition-all duration-200 group-hover:-translate-y-0.5 group-active:scale-90",
+        highlight ? "-rotate-6 border-2 border-ink bg-pop text-ink shadow-[3px_3px_0_0_var(--campus)]" : "border border-white/20 bg-white/15 group-hover:bg-white/25")}>{children}</span>
       <span aria-hidden>{label}</span>
     </button>
   );
@@ -244,8 +256,8 @@ function MediaCarousel({ item, active, near, muted }: { item: ReelItem; active: 
 
   if (media.length === 0) {
     return (
-      <div className="grid h-full place-items-center bg-gradient-to-br from-primary to-neutral-900" aria-hidden>
-        <span className="font-display text-8xl font-bold text-white/30">{item.title.charAt(0).toUpperCase()}</span>
+      <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_30%_25%,var(--campus),#0d0c0a_70%)]" aria-hidden>
+        <span className="font-serif text-[10rem] italic leading-none text-white/25">{item.title.charAt(0).toUpperCase()}</span>
       </div>
     );
   }
@@ -265,8 +277,8 @@ function MediaCarousel({ item, active, near, muted }: { item: ReelItem; active: 
         ))}
       </div>
       {media.length > 1 && (
-        <div className="absolute inset-x-0 top-5 flex justify-center gap-1.5" aria-hidden>
-          {media.map((m, i) => <span key={m.storage_path} className={cn("h-1.5 rounded-full transition-all", i === idx ? "w-5 bg-white" : "w-1.5 bg-white/50")} />)}
+        <div className="absolute inset-x-0 top-[4.25rem] flex justify-center gap-1.5" aria-hidden>
+          {media.map((m, i) => <span key={m.storage_path} className={cn("h-1.5 rounded-full transition-all duration-300", i === idx ? "w-6 bg-pop" : "w-1.5 bg-white/50")} />)}
         </div>
       )}
     </>

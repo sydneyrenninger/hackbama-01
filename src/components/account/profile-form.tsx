@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Camera } from "lucide-react";
 import { Avatar } from "@/components/shell/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,38 +54,37 @@ export function ProfileForm({ initial }: { initial: ProfileFormValues }) {
         });
       }}>
       <div className="flex items-center gap-4">
-        <Avatar name={name} path={avatarPath} size="xl" />
+        <Avatar name={name} path={avatarPath} size="xl" className="h-20 w-20 text-2xl" />
         <div>
-          <Label htmlFor="avatar-file" className="inline-flex h-9 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-sm font-semibold hover:bg-muted">
-            {uploading ? "Uploading…" : "Change photo"}
+          <Label htmlFor="avatar-file" className="lift inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border-2 border-ink bg-pop px-3.5 text-sm shadow-brut-sm">
+            <Camera className="h-4 w-4" aria-hidden />{uploading ? "Uploading…" : "Change photo"}
           </Label>
           <input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
             onChange={(e) => pickPhoto(e.target.files?.[0])} disabled={uploading} />
-          <p className="mt-1 text-xs text-muted-foreground">JPG, PNG or WebP, up to 2 MB.</p>
+          <p className="eyebrow mt-2 text-[9px] text-muted-foreground">JPG, PNG or WebP, up to 2 MB.</p>
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="pf-name">Display name</Label>
         <Input id="pf-name" name="displayName" required minLength={2} maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+      <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+        <div className="space-y-2">
           <Label htmlFor="pf-major">Major</Label>
           <Input id="pf-major" name="major" maxLength={80} defaultValue={initial.major ?? ""} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="pf-year">Graduation year</Label>
           <Input id="pf-year" name="gradYear" type="number" inputMode="numeric" min={1950} max={2100} defaultValue={initial.gradYear ?? ""} />
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="pf-bio">Bio</Label>
-        <textarea id="pf-bio" name="bio" rows={3} maxLength={280} defaultValue={initial.bio ?? ""}
-          className="w-full rounded-md border border-input bg-card px-3 py-2 text-base outline-none focus-visible:border-primary" />
+        <textarea id="pf-bio" name="bio" rows={3} maxLength={280} defaultValue={initial.bio ?? ""} className="field py-3" />
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      {saved && <p role="status" className="text-sm text-success">Saved.</p>}
-      <Button type="submit" disabled={pending || uploading}>{pending ? "Saving…" : "Save profile"}</Button>
+      {error && <p role="alert" className="rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</p>}
+      {saved && <p role="status" className="sticker animate-pop text-sm">✓ Saved.</p>}
+      <div><Button type="submit" disabled={pending || uploading}>{pending ? "Saving…" : "Save profile"}</Button></div>
     </form>
   );
 }

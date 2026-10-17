@@ -30,14 +30,17 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthShell>
-      <form onSubmit={submit} className="space-y-5">
-        <h2 className="font-display text-3xl font-bold">Choose a new password</h2>
+      <form onSubmit={submit} className="space-y-6">
+        <div>
+          <p className="eyebrow text-muted-foreground">Fresh start</p>
+          <h2 className="mt-2 font-display text-4xl font-extrabold leading-[0.95] tracking-[-0.05em]">Choose a new <span className="font-serif font-normal italic text-primary">password</span></h2>
+        </div>
         <PasswordField label="New password" value={pw} onChange={setPw} autoComplete="new-password" />
-        <p className="text-sm text-muted-foreground">10+ characters with letters and numbers.</p>
+        <p className="eyebrow -mt-3 text-muted-foreground">10+ characters with letters and numbers.</p>
         <PasswordField label="Confirm password" value={pw2} onChange={setPw2} autoComplete="new-password"
           error={mismatch ? "Passwords don't match" : undefined} />
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={!valid || busy}>{busy ? "Saving…" : "Save password"}</Button>
+        {error && <p role="alert" className="rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</p>}
+        <Button type="submit" size="lg" className="w-full" disabled={!valid || busy}>{busy ? "Saving…" : "Save password"}</Button>
       </form>
     </AuthShell>
   );

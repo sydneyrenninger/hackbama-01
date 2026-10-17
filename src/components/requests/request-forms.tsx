@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Hand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,10 @@ import { createChannel } from "@/server/actions/channels";
 import { createRequest, respondToRequest, setRequestStatus } from "@/server/actions/requests";
 
 const CATEGORIES = ["textbooks", "dorm", "lab", "tickets", "tutoring", "rides", "electronics", "furniture", "clothing", "other"] as const;
-const textarea = "w-full rounded-md border border-input bg-card px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-primary";
-const select = "h-11 w-full rounded-md border border-input bg-card px-3 text-base outline-none focus-visible:border-primary";
+const textarea = "field py-3";
+const select = "field h-12";
+const opt = <span className="font-sans text-xs font-normal text-muted-foreground"> (optional)</span>;
+const alert = "rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold text-destructive";
 
 export type ChannelOption = { id: string; name: string };
 export type MyListingOption = { id: string; title: string; price_cents: number | null; kind: string };
@@ -23,7 +26,7 @@ export function NewChannelForm({ campusSlug }: { campusSlug: string }) {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <form className="space-y-3 rounded-lg border border-border bg-card p-4"
+    <form className="space-y-4 rounded-2xl border-2 border-ink bg-card p-5 shadow-brut"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -34,15 +37,15 @@ export function NewChannelForm({ campusSlug }: { campusSlug: string }) {
           router.push(`/c/${campusSlug}/requests/${res.data!.slug}`);
         });
       }}>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="ch-name">Channel name</Label>
         <Input id="ch-name" name="name" required minLength={2} maxLength={40} placeholder="Gameday Tickets" />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="ch-desc">What is it for? <span className="font-normal text-muted-foreground">(optional)</span></Label>
+      <div className="space-y-2">
+        <Label htmlFor="ch-desc">What is it for?{opt}</Label>
         <Input id="ch-desc" name="description" maxLength={280} placeholder="Buy and sell game tickets" />
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className={alert}>{error}</p>}
       <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create channel"}</Button>
     </form>
   );
@@ -58,7 +61,7 @@ export function NewRequestForm({ channels, tenantId, defaultChannelId, lockChann
   const [done, setDone] = useState(false);
 
   return (
-    <form className="space-y-4 rounded-lg border border-border bg-card p-4"
+    <form className="space-y-5 rounded-2xl border-2 border-ink bg-card p-5 shadow-brut sm:p-6"
       onSubmit={(e) => {
         e.preventDefault();
         const form = e.currentTarget;
@@ -81,7 +84,7 @@ export function NewRequestForm({ channels, tenantId, defaultChannelId, lockChann
           router.refresh();
         });
       }}>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="rq-channel">Channel</Label>
         <select id="rq-channel" name="channel" required defaultValue={defaultChannelId ?? ""} disabled={lockChannel && Boolean(defaultChannelId)} className={select}>
           {!defaultChannelId && <option value="" disabled>Pick a channel…</option>}
@@ -89,30 +92,30 @@ export function NewRequestForm({ channels, tenantId, defaultChannelId, lockChann
         </select>
         {lockChannel && defaultChannelId && <input type="hidden" name="channel" value={defaultChannelId} />}
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="rq-title">What do you need?</Label>
-        <Input id="rq-title" name="title" required minLength={3} maxLength={90} placeholder="Looking for an ECE tutor" />
+        <Input id="rq-title" name="title" required minLength={3} maxLength={90} placeholder="Looking for an ECE tutor" className="h-14 font-display text-lg font-bold" />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="rq-desc">Details <span className="font-normal text-muted-foreground">(optional)</span></Label>
+      <div className="space-y-2">
+        <Label htmlFor="rq-desc">Details{opt}</Label>
         <textarea id="rq-desc" name="description" rows={3} maxLength={2000} className={textarea} placeholder="Weekends work best." />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="rq-tags">Tags <span className="font-normal text-muted-foreground">(optional)</span></Label>
-          <Input id="rq-tags" name="tags" placeholder="#ece #weekend" />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="rq-tags">Tags{opt}</Label>
+          <Input id="rq-tags" name="tags" placeholder="#ece #weekend" className="font-mono text-[15px]" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rq-budget">Budget ($) <span className="font-normal text-muted-foreground">(optional)</span></Label>
+        <div className="space-y-2">
+          <Label htmlFor="rq-budget">Budget ($){opt}</Label>
           <Input id="rq-budget" name="budget" inputMode="decimal" placeholder="25" />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="rq-category">Category</Label>
           <select id="rq-category" name="category" defaultValue="other" className={select}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}
           </select>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="rq-vis">Who can see it?</Label>
           <select id="rq-vis" name="visibility" defaultValue="campus" className={select}>
             <option value="campus">My campus only</option>
@@ -120,9 +123,9 @@ export function NewRequestForm({ channels, tenantId, defaultChannelId, lockChann
           </select>
         </div>
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      {done && <p role="status" className="text-sm text-success">Posted. Sellers can see it now.</p>}
-      <Button type="submit" disabled={pending}>{pending ? "Posting…" : "Post request"}</Button>
+      {error && <p role="alert" className={alert}>{error}</p>}
+      {done && <p role="status" className="sticker animate-pop text-sm">✓ Posted. Sellers can see it now.</p>}
+      <div><Button type="submit" size="lg" disabled={pending}>{pending ? "Posting…" : "Post request"}</Button></div>
     </form>
   );
 }
@@ -134,11 +137,11 @@ export function RespondForm({ requestId, listings }: { requestId: string; listin
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  if (sent) return <p role="status" className="text-sm font-semibold text-success">Offer sent. They&apos;ll see it in their inbox.</p>;
-  if (!open) return <Button size="sm" onClick={() => setOpen(true)}>I can help</Button>;
+  if (sent) return <p role="status" className="sticker animate-pop text-sm">✓ Offer sent. They&apos;ll see it in their inbox.</p>;
+  if (!open) return <Button size="sm" variant="secondary" onClick={() => setOpen(true)}><Hand className="h-4 w-4" aria-hidden />I can help</Button>;
 
   return (
-    <form className="mt-1 space-y-3 rounded-md border border-border bg-background p-3"
+    <form className="mt-1 animate-fade space-y-4 rounded-xl border-2 border-ink bg-paper p-4"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -155,24 +158,24 @@ export function RespondForm({ requestId, listings }: { requestId: string; listin
         });
       }}>
       {listings.length > 0 && (
-        <div className="space-y-1.5">
-          <Label htmlFor={`rs-l-${requestId}`}>Offer one of your listings <span className="font-normal text-muted-foreground">(optional)</span></Label>
+        <div className="space-y-2">
+          <Label htmlFor={`rs-l-${requestId}`}>Offer one of your listings{opt}</Label>
           <select id={`rs-l-${requestId}`} name="listing" defaultValue="" className={select}>
             <option value="">No listing, just a message</option>
             {listings.map((l) => <option key={l.id} value={l.id}>{l.title} {formatPrice(l.price_cents, l.kind) && `(${formatPrice(l.price_cents, l.kind)})`}</option>)}
           </select>
         </div>
       )}
-      <div className="space-y-1.5">
-        <Label htmlFor={`rs-p-${requestId}`}>Your price ($) <span className="font-normal text-muted-foreground">(optional)</span></Label>
+      <div className="space-y-2">
+        <Label htmlFor={`rs-p-${requestId}`}>Your price ($){opt}</Label>
         <Input id={`rs-p-${requestId}`} name="price" inputMode="decimal" placeholder="20" />
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor={`rs-m-${requestId}`}>Message</Label>
         <textarea id={`rs-m-${requestId}`} name="message" rows={2} maxLength={1000} className={textarea}
           placeholder="Hi! I tutored ECE 301 last year and I'm free Saturdays." />
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className={alert}>{error}</p>}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending}>{pending ? "Sending…" : "Send offer"}</Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
@@ -194,10 +197,9 @@ export function RequestOwnerActions({ requestId }: { requestId: string }) {
   });
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-muted-foreground">Your request</span>
       <Button size="sm" variant="outline" disabled={pending} onClick={() => set("fulfilled")}>Mark fulfilled</Button>
       <Button size="sm" variant="ghost" disabled={pending} onClick={() => set("closed")}>Close</Button>
-      {error && <span role="alert" className="text-sm text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-sm font-bold text-destructive">{error}</span>}
     </div>
   );
 }

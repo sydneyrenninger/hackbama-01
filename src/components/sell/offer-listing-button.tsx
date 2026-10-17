@@ -9,7 +9,7 @@ export function OfferListingButton({ requestId, listingId, listingTitle }: { req
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  if (sent) return <span role="status" className="text-sm font-semibold text-success">Offer sent</span>;
+  if (sent) return <span role="status" className="sticker animate-pop text-sm">✓ Offer sent</span>;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" disabled={pending}
@@ -21,7 +21,7 @@ export function OfferListingButton({ requestId, listingId, listingTitle }: { req
         })}>
         {pending ? "Sending…" : `Offer ${listingTitle.length > 24 ? `${listingTitle.slice(0, 24)}…` : listingTitle}`}
       </Button>
-      {error && <span role="alert" className="text-sm text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-sm font-bold text-destructive">{error}</span>}
     </div>
   );
 }

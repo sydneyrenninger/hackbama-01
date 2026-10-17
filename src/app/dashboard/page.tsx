@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Compass, ListChecks, LogOut, Plus, Settings, Users } from "lucide-react";
+import { ArrowUpRight, Compass, ListChecks, LogOut, Plus, Settings, Users } from "lucide-react";
 import { IncomingOfferActions } from "@/components/inbox/offer-actions";
 import { ListingGrid, type GridListing } from "@/components/listing/listing-grid";
 import { AppFrame } from "@/components/shell/app-frame";
 import { Avatar } from "@/components/shell/avatar";
+import { Empty } from "@/components/shell/empty";
+import { PageHeader, SectionTitle } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/format";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { getAppContext } from "@/server/queries/context";
 import { getConversations, getMyListings, getMyOffers, getMyRequests, getSavedListings } from "@/server/queries/marketplace";
 
@@ -55,23 +57,26 @@ export default async function DashboardPage() {
 
   return (
     <AppFrame>
-      <div className="space-y-8">
-        <section className="flex flex-wrap items-center gap-4">
-          <Avatar name={p.display_name} path={p.avatar_path} size="lg" />
-          <div className="min-w-0 flex-1">
-            <h1 className="font-display text-3xl font-bold">Hi, {firstName}</h1>
-            <p className="text-muted-foreground">{ctx.homeTenant?.name} · {p.completed_trades} completed trade{p.completed_trades === 1 ? "" : "s"}</p>
-          </div>
-          <Button asChild variant="outline"><Link href="/account"><Settings className="h-4 w-4" aria-hidden />Profile &amp; settings</Link></Button>
-        </section>
+      <div className="space-y-10">
+        <PageHeader kicker={`Dashboard · ${ctx.homeTenant?.name ?? ""}`} title="Hey," accent={`${firstName}.`}
+          actions={<Button asChild variant="outline"><Link href="/account"><Settings className="h-4 w-4" aria-hidden />Profile &amp; settings</Link></Button>}>
+          {p.completed_trades} completed trade{p.completed_trades === 1 ? "" : "s"} so far. Here&apos;s the scoreboard.
+        </PageHeader>
 
-        <section aria-label="Your numbers">
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <section aria-label="Your numbers" className="overflow-hidden rounded-[1.6rem] border-2 border-ink bg-ink text-paper shadow-[6px_6px_0_0_var(--campus)]">
+          <div className="flex items-center justify-between gap-3 border-b-2 border-paper/10 px-5 py-3">
+            <p className="eyebrow flex items-center gap-2 text-pop"><span className="h-2 w-2 animate-pulse rounded-full bg-pop" aria-hidden />Scoreboard</p>
+            <p className="eyebrow truncate text-paper/50">{campus?.short_name}</p>
+          </div>
+          <ul className="grid grid-cols-2 gap-px bg-paper/10 sm:grid-cols-3">
             {stats.map((s) => (
-              <li key={s.label}>
-                <Link href={s.href} className="block rounded-lg border border-border bg-card p-4 hover:bg-muted">
-                  <span className="text-sm text-muted-foreground">{s.label}</span>
-                  <span className={`block font-display text-3xl font-bold ${s.alert ? "text-primary" : ""}`}>{s.value}</span>
+              <li key={s.label} className="bg-ink">
+                <Link href={s.href} className="group relative block p-5 transition-colors hover:bg-paper/[0.06] sm:p-6">
+                  <span className="eyebrow text-[10px] text-paper/55">{s.label}</span>
+                  <span className={cn("mt-1 block font-display text-6xl font-extrabold leading-none tracking-[-0.06em] tabular-nums sm:text-7xl", s.alert ? "text-pop" : "text-paper")}>
+                    {String(s.value).padStart(2, "0")}
+                  </span>
+                  <ArrowUpRight className="absolute right-4 top-4 h-4 w-4 text-paper/30 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-pop" aria-hidden />
                 </Link>
               </li>
             ))}
@@ -79,65 +84,68 @@ export default async function DashboardPage() {
         </section>
 
         <section aria-label="Shortcuts">
-          <ul className="flex flex-wrap gap-2">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {actions.map(({ label, href, icon: Icon, primary }) => (
               <li key={label}>
-                <Link href={href} className={`inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold ${primary ? "bg-primary text-primary-foreground hover:brightness-110" : "border border-border bg-card hover:bg-muted"}`}>
-                  <Icon className="h-4 w-4" aria-hidden />{label}
+                <Link href={href} className={cn("lift flex h-full flex-col justify-between gap-6 rounded-2xl border-2 border-ink p-4 shadow-brut-sm",
+                  primary ? "bg-primary text-primary-foreground" : "bg-card")}>
+                  <Icon className="h-6 w-6" aria-hidden />
+                  <span className="font-display text-lg font-extrabold leading-tight tracking-[-0.02em]">{label}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </section>
 
-        <section aria-labelledby="attention-h" className="space-y-3">
-          <h2 id="attention-h" className="font-display text-xl font-bold">Needs your attention</h2>
+        <section aria-labelledby="attention-h" className="space-y-4">
+          <SectionTitle id="attention-h" n="01">Needs your attention</SectionTitle>
           {toReview.length === 0 && unreadChats.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border p-6 text-center text-muted-foreground">You&apos;re all caught up.</p>
+            <Empty mark="✓">You&apos;re all caught up.</Empty>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {toReview.slice(0, 3).map((o) => (
-                <li key={o.id} className="rounded-lg border-2 border-primary/40 bg-card p-4">
-                  <p className="font-semibold">
+                <li key={o.id} className="relative overflow-hidden rounded-2xl border-2 border-ink bg-card p-4 pl-6 shadow-brut">
+                  <span aria-hidden className="absolute inset-y-0 left-0 w-2 bg-pop" />
+                  <p className="font-display font-bold leading-snug">
                     {o.offerer?.display_name ?? "Someone"} {o.kind === "listing_interest" ? `wants ${o.listing?.title ?? "your listing"}` : `can help with ${o.request?.title ?? "your request"}`}
-                    {o.amount_cents != null && <span className="text-muted-foreground"> · {formatPrice(o.amount_cents, "sale")}</span>}
+                    {o.amount_cents != null && <span className="sticker ml-2 text-xs">{formatPrice(o.amount_cents, "sale")}</span>}
                   </p>
-                  {o.message && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">&ldquo;{o.message}&rdquo;</p>}
+                  {o.message && <p className="mt-1.5 line-clamp-2 text-sm italic text-muted-foreground">&ldquo;{o.message}&rdquo;</p>}
                   <div className="mt-3"><IncomingOfferActions offerId={o.id} campusSlug={slug} /></div>
                 </li>
               ))}
               {unreadChats.slice(0, 3).map((c) => (
                 <li key={c.conversation_id}>
-                  <Link href={`/c/${slug}/matches/${c.conversation_id}`} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:bg-muted">
+                  <Link href={`/c/${slug}/matches/${c.conversation_id}`} className="lift flex items-center gap-3 rounded-2xl border-2 border-ink bg-card p-3.5 shadow-brut-sm">
                     <Avatar name={c.participants[0]?.display_name} size="sm" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{c.participants.map((x) => x.display_name).join(", ")}{c.listing_title && <span className="font-normal text-muted-foreground"> · {c.listing_title}</span>}</span>
+                      <span className="block truncate font-display font-bold">{c.participants.map((x) => x.display_name).join(", ")}{c.listing_title && <span className="font-sans font-normal text-muted-foreground"> · {c.listing_title}</span>}</span>
                       <span className="block truncate text-sm">{c.last_message}</span>
                     </span>
-                    <span className="text-xs text-muted-foreground">{timeAgo(c.last_message_at)}</span>
-                    <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
+                    <span className="eyebrow text-[9px] text-muted-foreground">{timeAgo(c.last_message_at)}</span>
+                    <span className="grid h-6 min-w-6 place-items-center rounded-full border-2 border-ink bg-pop px-1.5 font-mono text-[11px] font-bold">
                       <span className="sr-only">{c.unread_count} unread</span>{c.unread_count}
                     </span>
                   </Link>
                 </li>
               ))}
               {(toReview.length > 3 || unreadChats.length > 3) && (
-                <li><Link href={`/c/${slug}/matches`} className="text-sm font-semibold text-primary hover:underline">See everything in your inbox</Link></li>
+                <li><Link href={`/c/${slug}/matches`} className="font-display text-sm font-bold text-primary underline decoration-pop decoration-[3px] underline-offset-4">See everything in your inbox</Link></li>
               )}
             </ul>
           )}
         </section>
 
-        <section aria-labelledby="listings-h" className="space-y-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="listings-h" className="font-display text-xl font-bold">Your listings</h2>
-            <Link href={`/c/${slug}/sell`} className="text-sm font-semibold text-primary hover:underline">Manage all</Link>
-          </div>
+        <section aria-labelledby="listings-h" className="space-y-5">
+          <SectionTitle id="listings-h" n="02"
+            aside={<Link href={`/c/${slug}/sell`} className="font-display text-sm font-bold text-primary underline decoration-pop decoration-[3px] underline-offset-4">Manage all</Link>}>
+            Your listings
+          </SectionTitle>
           <ListingGrid listings={active.slice(0, 4)} linkQuery={`seller=${p.id}`}
             emptyText="You haven't posted anything yet. Tap New post to sell something." />
         </section>
 
-        <form action="/api/auth/signout" method="post">
+        <form action="/api/auth/signout" method="post" className="border-t-2 border-dashed border-ink/20 pt-6">
           <Button type="submit" variant="ghost"><LogOut className="h-4 w-4" aria-hidden />Sign out</Button>
         </form>
       </div>

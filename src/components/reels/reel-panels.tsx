@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { Send, Trash2, X } from "lucide-react";
+import { ArrowRight, Send, Trash2, X } from "lucide-react";
 import { Avatar } from "@/components/shell/avatar";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/format";
@@ -42,15 +42,17 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
   useEffect(() => { closeRef.current?.focus(); }, []);
   return (
     <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-[60] flex items-end justify-center">
-      <button type="button" aria-label="Close" tabIndex={-1} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[85dvh] w-full max-w-[480px] flex-col rounded-t-2xl bg-background text-foreground shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="font-display text-lg font-bold">{title}</h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted">
+      <button type="button" aria-label="Close" tabIndex={-1} onClick={onClose} className="absolute inset-0 animate-fade bg-black/60 backdrop-blur-[2px]" />
+      <div className="relative flex max-h-[85dvh] w-full max-w-[480px] animate-sheet flex-col rounded-t-[1.75rem] border-2 border-b-0 border-ink bg-paper text-foreground shadow-2xl">
+        <span aria-hidden className="mx-auto mt-2.5 h-1.5 w-12 rounded-full bg-ink/20" />
+        <div className="flex items-center justify-between border-b-2 border-ink px-5 pb-3 pt-2">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.03em]">{title}</h2>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close"
+            className="grid h-10 w-10 place-items-center rounded-full border-2 border-ink bg-card shadow-brut-sm transition-transform hover:rotate-90">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="overflow-y-auto px-5 py-5">{children}</div>
       </div>
     </div>
   );
@@ -60,32 +62,33 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
 export function ViewPanel({ item }: { item: ReelItem }) {
   const price = formatPrice(item.price_cents, item.kind);
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        {price && <p className="font-display text-3xl font-bold">{price}</p>}
-        <h3 className="text-xl font-semibold">{item.title}</h3>
-        <p className="text-sm text-muted-foreground">
+        {price && <p className="sticker -rotate-2 text-2xl">{price}</p>}
+        <h3 className="mt-3 font-display text-2xl font-extrabold leading-tight tracking-[-0.03em]">{item.title}</h3>
+        <p className="eyebrow mt-2 text-[10px] text-muted-foreground">
           {[cap(item.category), item.condition ? CONDITION[item.condition] : null, item.tenant?.short_name, `posted ${timeAgo(item.created_at)}`]
             .filter(Boolean).join(" · ")}
         </p>
       </div>
-      {item.status === "sold" && <p className="rounded-md bg-muted p-3 text-sm font-semibold">This item has been sold.</p>}
-      {item.description && <p className="whitespace-pre-line">{item.description}</p>}
+      {item.status === "sold" && <p className="rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold text-destructive">This item has been sold.</p>}
+      {item.description && <p className="whitespace-pre-line leading-relaxed">{item.description}</p>}
       {item.kind === "trade" && (item.trade_wants_categories.length > 0 || item.trade_wants_text) && (
-        <p className="text-sm"><span className="font-semibold">Wants in trade:</span>{" "}
+        <p className="rounded-xl border-2 border-dashed border-ink/30 p-3 text-sm"><span className="eyebrow mr-1 text-[10px]">Wants in trade</span>{" "}
           {[item.trade_wants_categories.map(cap).join(", "), item.trade_wants_text].filter(Boolean).join(" · ")}</p>
       )}
-      {item.pickup_notes && <p className="text-sm"><span className="font-semibold">Pickup:</span> {item.pickup_notes}</p>}
+      {item.pickup_notes && <p className="text-sm"><span className="eyebrow mr-1 text-[10px]">Pickup</span> {item.pickup_notes}</p>}
       {item.tags.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5">{item.tags.map((t) => <li key={t} className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">#{t}</li>)}</ul>
+        <ul className="flex flex-wrap gap-1.5">{item.tags.map((t) => <li key={t} className="rounded-full border-2 border-ink/15 bg-card px-2.5 py-0.5 font-mono text-xs font-bold">#{t}</li>)}</ul>
       )}
       {item.seller && (
-        <Link href={`/u/${item.seller.id}`} className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted">
+        <Link href={`/u/${item.seller.id}`} className="lift flex items-center gap-3 rounded-2xl border-2 border-ink bg-card p-3 shadow-brut-sm">
           <Avatar name={item.seller.display_name} path={item.seller.avatar_path} />
           <span className="min-w-0 flex-1">
-            <span className="block font-semibold">{item.seller.display_name}</span>
+            <span className="block font-display font-bold">{item.seller.display_name}</span>
             <span className="block text-sm text-muted-foreground">{item.seller.completed_trades} completed trade{item.seller.completed_trades === 1 ? "" : "s"} · View profile</span>
           </span>
+          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
         </Link>
       )}
     </div>
@@ -102,12 +105,13 @@ export function BuyPanel({ item, inboxHref }: { item: ReelItem; inboxHref: strin
 
   if (sent) {
     return (
-      <div className="space-y-3 py-2">
-        <p role="status" className="font-semibold text-success">Offer sent!</p>
-        <p className="text-muted-foreground">
+      <div className="space-y-4 py-4 text-center">
+        <span aria-hidden className="mx-auto grid h-16 w-16 animate-pop place-items-center rounded-full border-2 border-ink bg-pop text-3xl shadow-brut">✓</span>
+        <p role="status" className="font-display text-2xl font-extrabold tracking-[-0.03em]">Offer sent!</p>
+        <p className="mx-auto max-w-xs text-muted-foreground">
           {item.seller?.display_name ?? "The seller"} will see it in their inbox. Once they accept, your message opens a chat between you two.
         </p>
-        <Link href={inboxHref} className="inline-block font-semibold text-primary hover:underline">Go to inbox</Link>
+        <Button asChild variant="outline"><Link href={inboxHref}>Go to inbox <ArrowRight className="h-4 w-4" aria-hidden /></Link></Button>
       </div>
     );
   }
@@ -121,17 +125,18 @@ export function BuyPanel({ item, inboxHref }: { item: ReelItem; inboxHref: strin
         setSent(true);
       });
     }}>
-      <p className="text-sm text-muted-foreground">
-        {item.title}{price && <> · <span className="font-semibold text-foreground">{price}</span></>}
-      </p>
-      <div className="space-y-1.5">
-        <label htmlFor={`buy-msg-${item.id}`} className="text-sm font-semibold">Message to {item.seller?.display_name ?? "the seller"}</label>
+      <div className="flex items-center justify-between gap-3 rounded-xl border-2 border-ink/15 bg-card px-3 py-2.5">
+        <p className="truncate text-sm font-bold">{item.title}</p>
+        {price && <span className="sticker shrink-0 text-sm">{price}</span>}
+      </div>
+      <div className="space-y-2">
+        <label htmlFor={`buy-msg-${item.id}`} className="block font-display text-sm font-bold">Message to {item.seller?.display_name ?? "the seller"}</label>
         <textarea id={`buy-msg-${item.id}`} value={message} onChange={(e) => setMessage(e.target.value)} rows={4} maxLength={1000}
-          className="w-full rounded-md border border-input bg-card px-3 py-2 text-base outline-none focus-visible:border-primary" />
+          className="field py-3" />
         <p className="text-xs text-muted-foreground">This becomes the first message in your chat once they accept.</p>
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={pending}>{pending ? "Sending…" : `Send offer`}</Button>
+      {error && <p role="alert" className="rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</p>}
+      <Button type="submit" size="lg" className="w-full" disabled={pending}>{pending ? "Sending…" : <>Send offer <Send className="h-4 w-4" aria-hidden /></>}</Button>
     </form>
   );
 }
@@ -155,20 +160,20 @@ export function CommentsPanel({ item, currentUserId, onCount }: { item: ReelItem
 
   return (
     <div className="space-y-4">
-      {comments === null && !error && <p className="py-6 text-center text-muted-foreground">Loading comments…</p>}
-      {comments?.length === 0 && <p className="py-6 text-center text-muted-foreground">No comments yet. Ask a question!</p>}
+      {comments === null && !error && <p className="eyebrow animate-pulse py-8 text-center text-muted-foreground">Loading comments…</p>}
+      {comments?.length === 0 && <p className="py-8 text-center text-muted-foreground"><span className="block font-serif text-3xl italic text-ink">Quiet in here.</span>No comments yet. Ask a question!</p>}
       {comments && comments.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {comments.map((c) => (
             <li key={c.id} className="flex gap-3">
               <Avatar name={c.author?.display_name} path={c.author?.avatar_path} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">
-                  <span className="font-semibold">{c.author?.display_name ?? "Someone"}</span>
-                  {c.author?.id === item.seller_id && <span className="ml-1 rounded bg-secondary px-1.5 py-0.5 text-[11px] font-semibold text-secondary-foreground">Seller</span>}
+                  <span className="font-bold">{c.author?.display_name ?? "Someone"}</span>
+                  {c.author?.id === item.seller_id && <span className="eyebrow ml-1.5 rounded border-[1.5px] border-ink bg-pop px-1.5 py-px text-[9px]">Seller</span>}
                   <span className="ml-2 text-xs text-muted-foreground">{timeAgo(c.created_at)}</span>
                 </p>
-                <p className="whitespace-pre-wrap break-words text-sm">{c.body}</p>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm">{c.body}</p>
               </div>
               {(c.author?.id === currentUserId || isSeller) && (
                 <button type="button" aria-label="Delete comment" disabled={pending}
@@ -177,7 +182,7 @@ export function CommentsPanel({ item, currentUserId, onCount }: { item: ReelItem
                     if (!res.ok) return setError(res.error);
                     setComments((cur) => { const next = (cur ?? []).filter((x) => x.id !== c.id); onCount(next.length); return next; });
                   })}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive">
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
               )}
@@ -185,8 +190,8 @@ export function CommentsPanel({ item, currentUserId, onCount }: { item: ReelItem
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <form className="sticky bottom-0 flex gap-2 bg-background pt-2" onSubmit={(e) => {
+      {error && <p role="alert" className="text-sm font-bold text-destructive">{error}</p>}
+      <form className="sticky bottom-0 flex gap-2 bg-paper pt-3" onSubmit={(e) => {
         e.preventDefault();
         const text = body.trim();
         if (!text) return;
@@ -201,8 +206,8 @@ export function CommentsPanel({ item, currentUserId, onCount }: { item: ReelItem
         <label htmlFor={`comment-${item.id}`} className="sr-only">Add a comment</label>
         <input id={`comment-${item.id}`} value={body} onChange={(e) => setBody(e.target.value)} maxLength={500} autoComplete="off"
           placeholder={isSeller ? "Reply to buyers…" : "Ask about size, pickup, condition…"}
-          className="h-11 min-w-0 flex-1 rounded-full border border-input bg-card px-4 text-base outline-none focus-visible:border-primary" />
-        <Button type="submit" size="icon" className={cn("rounded-full")} disabled={pending || !body.trim()} aria-label="Post comment">
+          className="field h-12 min-w-0 flex-1 rounded-full" />
+        <Button type="submit" size="icon" className={cn("h-12 w-12 rounded-full")} disabled={pending || !body.trim()} aria-label="Post comment">
           <Send className="h-4 w-4" aria-hidden />
         </Button>
       </form>

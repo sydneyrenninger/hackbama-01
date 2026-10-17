@@ -54,16 +54,21 @@ export function ChatView({ conversationId, currentUserId, initialMessages }: {
   }
 
   return (
-    <div className="flex min-h-[60vh] flex-col">
-      <ol className="flex flex-1 flex-col gap-2 pb-4" aria-label="Messages" aria-live="polite">
-        {messages.length === 0 && <li className="py-10 text-center text-muted-foreground">Say hi and work out the details.</li>}
+    <div className="flex min-h-[62vh] flex-col">
+      <ol className="flex flex-1 flex-col gap-2.5 pb-6" aria-label="Messages" aria-live="polite">
+        {messages.length === 0 && (
+          <li className="py-14 text-center text-muted-foreground">
+            <span className="block font-serif text-4xl italic text-ink">Say hi.</span>
+            Say hi and work out the details.
+          </li>
+        )}
         {messages.map((m) => {
           const mine = m.sender_id === currentUserId;
           return (
-            <li key={m.id} className={cn("flex max-w-[80%] flex-col gap-0.5 rounded-2xl px-4 py-2.5",
-              mine ? "self-end bg-primary text-primary-foreground" : "self-start border border-border bg-card")}>
+            <li key={m.id} className={cn("flex max-w-[80%] animate-fade flex-col gap-0.5 rounded-2xl border-2 border-ink px-4 py-2.5",
+              mine ? "self-end rounded-br-md bg-primary text-primary-foreground shadow-brut-sm" : "self-start rounded-bl-md bg-card")}>
               <span className="whitespace-pre-wrap break-words">{m.body}</span>
-              <time dateTime={m.created_at} className={cn("self-end text-[11px]", mine ? "opacity-80" : "text-muted-foreground")}>
+              <time dateTime={m.created_at} className={cn("self-end font-mono text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>
                 {clockTime(m.created_at)}
               </time>
             </li>
@@ -71,13 +76,13 @@ export function ChatView({ conversationId, currentUserId, initialMessages }: {
         })}
         <li ref={bottom} aria-hidden className="h-0" />
       </ol>
-      <form onSubmit={submit} className="sticky bottom-4 space-y-2 rounded-2xl border border-border bg-background/95 p-2 shadow-lg backdrop-blur">
-        {error && <p role="alert" className="px-2 text-sm text-destructive">{error}</p>}
+      <form onSubmit={submit} className="sticky bottom-4 space-y-2 rounded-2xl border-2 border-ink bg-card p-2 shadow-brut">
+        {error && <p role="alert" className="px-2 text-sm font-bold text-destructive">{error}</p>}
         <div className="flex gap-2">
           <label htmlFor="chat-input" className="sr-only">Message</label>
           <input id="chat-input" value={body} onChange={(e) => setBody(e.target.value)} maxLength={4000} autoComplete="off" placeholder="Message…"
-            className="h-11 min-w-0 flex-1 rounded-full border border-input bg-card px-4 text-base outline-none focus-visible:border-primary" />
-          <Button type="submit" size="icon" className="rounded-full" disabled={pending || !body.trim()} aria-label="Send">
+            className="h-12 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground" />
+          <Button type="submit" size="icon" className="h-12 w-12 rounded-xl" disabled={pending || !body.trim()} aria-label="Send">
             <Send className="h-4 w-4" aria-hidden />
           </Button>
         </div>

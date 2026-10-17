@@ -24,19 +24,20 @@ export default async function ChatPage({ params }: { params: Promise<{ campus: s
   const other = conv.participants[0];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <div className="flex items-center gap-3">
-        <Link href={`/c/${slug}/matches`} aria-label="Back to inbox" className="grid h-10 w-10 place-items-center rounded-full hover:bg-muted">
+    <div className="mx-auto max-w-2xl space-y-5">
+      <div className="flex items-center gap-3 rounded-2xl border-2 border-ink bg-card p-3 shadow-brut">
+        <Link href={`/c/${slug}/matches`} aria-label="Back to inbox"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-ink bg-paper transition-transform hover:-translate-x-0.5">
           <ArrowLeft className="h-5 w-5" aria-hidden />
         </Link>
         <Avatar name={other?.display_name} />
         <div className="min-w-0">
-          <p className="truncate font-display text-lg font-bold">
+          <p className="truncate font-display text-lg font-extrabold tracking-[-0.02em]">
             {other
               ? <Link href={`/u/${other.id}`} className="hover:underline">{conv.participants.map((p) => p.display_name).join(", ")}</Link>
               : "Conversation"}
           </p>
-          {conv.listing_title && <p className="truncate text-sm text-muted-foreground">About: {conv.listing_title}</p>}
+          {conv.listing_title && <p className="eyebrow truncate text-[9px] text-primary">About: {conv.listing_title}</p>}
         </div>
       </div>
       <ChatView conversationId={id} currentUserId={ctx.user.id} initialMessages={messages} />

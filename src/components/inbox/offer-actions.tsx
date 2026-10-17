@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { respondToOffer, withdrawOffer } from "@/server/actions/offers";
 
@@ -20,9 +21,9 @@ export function IncomingOfferActions({ offerId, campusSlug }: { offerId: string;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" disabled={pending} onClick={() => respond(true)}>Accept &amp; chat</Button>
+      <Button size="sm" disabled={pending} onClick={() => respond(true)}><MessageCircle className="h-4 w-4" aria-hidden />Accept &amp; chat</Button>
       <Button size="sm" variant="outline" disabled={pending} onClick={() => respond(false)}>Decline</Button>
-      {error && <span role="alert" className="text-sm text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-sm font-bold text-destructive">{error}</span>}
     </div>
   );
 }
@@ -34,7 +35,7 @@ export function WithdrawOfferButton({ offerId }: { offerId: string }) {
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="flex items-center gap-2">
-      <Button size="sm" variant="ghost" disabled={pending}
+      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" disabled={pending}
         onClick={() => start(async () => {
           setError(null);
           const res = await withdrawOffer(offerId);
@@ -43,7 +44,7 @@ export function WithdrawOfferButton({ offerId }: { offerId: string }) {
         })}>
         Withdraw
       </Button>
-      {error && <span role="alert" className="text-sm text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-sm font-bold text-destructive">{error}</span>}
     </div>
   );
 }
