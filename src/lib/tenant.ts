@@ -8,11 +8,19 @@ export async function getCampus(slug: string): Promise<Campus | null> {
   return data;
 }
 
-// Map an .edu email to its campus via email_domain
+// School domain for an email: "x@crimson.ua.edu" -> "ua.edu". Null if not .edu.
+// Keep in sync with handle_new_user in 0001_init.sql.
+export function schoolDomain(email: string): string | null {
+  const domain = email.split("@")[1]?.toLowerCase() ?? "";
+  if (!domain.endsWith(".edu")) return null;
+  return domain.split(".").slice(-2).join(".");
+}
+
+// Campus row for an email (may not exist yet; it's created on that school's first signup)
 export async function getCampusForEmail(email: string): Promise<Campus | null> {
-  const domain = email.split("@")[1]?.toLowerCase();
-  if (!domain) return null;
+  const school = schoolDomain(email);
+  if (!school) return null;
   const supabase = await createClient();
-  const { data } = await supabase.from("campuses").select("*").eq("email_domain", domain).single();
+  const { data } = await supabase.from("campuses").select("*").eq("email_domain", school).maybeSingle();
   return data;
 }

@@ -20,6 +20,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Everything except the landing page, login flow, and auth callbacks requires an account.
+  const path = request.nextUrl.pathname;
+  const isPublic = path === "/" || PUBLIC_PREFIXES.some((p) => path.startsWith(p));
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
+
+const PUBLIC_PREFIXES = ["/login", "/verify", "/auth"];

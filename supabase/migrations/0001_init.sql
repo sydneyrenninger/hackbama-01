@@ -5,7 +5,7 @@ create table campuses (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,               -- used in URL: /c/ua
   name text not null,
-  email_domain text unique not null,       -- e.g. crimson.ua.edu
+  email_domain text unique not null,       -- school domain, e.g. ua.edu (crimson.ua.edu maps here)
   logo_url text,
   theme jsonb not null default '{"primary":"#9E1B32","secondary":"#FFFFFF"}',
   pickup_spots text[] not null default '{}',
@@ -22,16 +22,27 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
--- Auto-create profile on signup; campus resolved from email domain.
--- Signups from unknown domains are rejected (= .edu verification).
+-- Auto-create profile on signup. Any .edu email is accepted; non-.edu is rejected.
+-- Campus = school domain (crimson.ua.edu -> ua.edu). Unknown schools get a campus row
+-- created on first signup, so every school is supported with zero setup.
 create or replace function handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare cid uuid;
+declare
+  cid uuid;
+  d text := lower(split_part(new.email, '@', 2));
+  school text;
 begin
-  select id into cid from campuses where email_domain = lower(split_part(new.email, '@', 2));
-  if cid is null then
-    raise exception 'Email domain not registered with any campus';
+  if d not like '%.edu' then
+    raise exception 'A .edu email is required';
   end if;
+
+  school := substring(d from '([^.]+\.edu)$');   -- last two labels: ua.edu
+
+  insert into campuses (slug, name, email_domain)
+  values (split_part(school, '.', 1), school, school)
+  on conflict (email_domain) do nothing;
+
+  select id into cid from campuses where email_domain = school;
   insert into profiles (id, campus_id, display_name)
   values (new.id, cid, split_part(new.email, '@', 1));
   return new;

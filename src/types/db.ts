@@ -1,4 +1,4 @@
-// Mirrors supabase/migrations/0001_init.sql
+// Mirrors supabase/migrations/*.sql
 
 export type Campus = {
   id: string;
@@ -17,6 +17,9 @@ export type Profile = {
   display_name: string;
   avatar_url: string | null;
   major: string | null;
+  bio: string | null;
+  grad_year: number | null;
+  onboarded: boolean;
   created_at: string;
 };
 
