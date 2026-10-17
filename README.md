@@ -39,7 +39,7 @@ src/
     communities/              Community tab: directory of campuses
     u/[id]/                   someone else's public profile
     c/[campus]/               everything campus-scoped (/c/ua, /c/auburn)
-      layout.tsx              requires an onboarded account, applies the campus theme
+      layout.tsx              requires an account, applies the campus theme
       swipe/ reels/ requests/ matches/ sell/
     api/
       auth/signup/start|verify|complete   send code → check code → create account
@@ -76,7 +76,7 @@ tests/core.test.ts            unit tests (`npm test`)
 
 Sign up with any `.edu` email: we email a 6-digit code (Gmail SMTP), then you set a display name and
 password. The account is tied to that school's campus. `/onboarding` currently redirects to `/app`
-until its form exists (campus pages under `/c/` still require a finished onboarding).
+until its form exists (onboarding is not required yet; see the TODO in `src/lib/auth.ts`).
 Every route except `/`, `/login`, `/signup`, password reset and `/api/auth/*` requires an account.
 In server code, call `requireAccount()` to get `{ userId, email, profile, campus }`, or `getAppContext()`
 for browse scope, memberships and the active campus.
