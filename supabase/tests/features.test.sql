@@ -51,42 +51,52 @@ select throws_ok($$ insert into public.listing_images (listing_id, storage_path,
   '23514', null, 'media_type must be image or video');
 
 -- Channels
-select is((select slug from public.create_channel('Gameday Tickets', 'Buy and sell game tickets')), 'gameday-tickets',
+-- Names are prefixed "ZZ pgTAP" so they never collide with channels real users create.
+select is((select slug from public.create_channel('ZZ pgTAP One', 'Buy and sell game tickets')), 'zz-pgtap-one',
           'create_channel slugifies the name');
-select throws_ok($$ select public.create_channel('gameday tickets') $$, 'P0001', 'channel_exists', 'channel names are unique (case-insensitive)');
+select throws_ok($$ select public.create_channel('zz pgtap one') $$, 'P0001', 'channel_exists', 'channel names are unique (case-insensitive)');
 select throws_ok($$ select public.create_channel('!!') $$, 'P0001', 'channel_name_invalid', 'channel name needs letters or numbers');
-select public.create_channel('Channel ' || n) from generate_series(2, 5) n;
-select throws_ok($$ select public.create_channel('One too many') $$, 'P0001', 'channel_rate_limited', 'max 5 new channels per user per day');
+select public.create_channel('ZZ pgTAP ' || n) from generate_series(2, 5) n;
+select throws_ok($$ select public.create_channel('ZZ pgTAP too many') $$, 'P0001', 'channel_rate_limited', 'max 5 new channels per user per day');
 select throws_ok($$ insert into public.request_channels (slug, name) values ('sneaky', 'Sneaky') $$,
   '42501', null, 'channels can only be created through create_channel()');
 
 -- Ben browses, requests, saves --------------------------------------------
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000b2","role":"authenticated"}';
 
-select is((select count(*)::int from public.list_channels()), 10, 'list_channels shows 5 starter + 5 user channels');
+select is((select count(*)::int from public.list_channels(p_limit => 100)
+           where slug in ('tutoring', 'rides', 'tickets', 'textbooks', 'housing') or slug like 'zz-pgtap-%'), 10,
+          'list_channels shows the 5 starter channels + the 5 created here');
 insert into public.requests (id, tenant_id, requester_id, title, category, budget_cents, channel_id, tags) values
   ('e0000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b2',
-   'Need an ECE tutor', 'tutoring', 3000, 'dddddddd-0000-4000-8000-000000000001', array['#ECE']);
-select is((select open_requests::int from public.list_channels('tutor') where slug = 'tutoring'), 1,
+   'Need an ECE tutor', 'tutoring', 3000, (select id from public.request_channels where slug = 'zz-pgtap-one'), array['#ECE']);
+select is((select open_requests::int from public.list_channels('pgtap one') where slug = 'zz-pgtap-one'), 1,
           'channel shows its open request count; search by name works');
 
-select is((select array_agg(id order by rank desc, id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], 'dress'))[1],
+-- Searches are scoped to this test's own listings (ids start f0000000-) so real listings can't affect them.
+select is((select (array_agg(id order by rank desc, id))[1] from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], 'dress', p_limit => 100)
+           where id::text like 'f0000000-%'),
           'f0000000-0000-4000-8000-000000000001'::uuid, 'relevance: title match ranks above description match');
-select is((select count(*)::int from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], 'dress')), 2,
+select is((select count(*)::int from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], 'dress', p_limit => 100)
+           where id::text like 'f0000000-%'), 2,
           'text search matches title and description');
-select is((select array_agg(id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], null, array['#ECE'])),
+select is((select array_agg(id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], null, array['#ECE'], p_limit => 100)
+           where id::text like 'f0000000-%'),
           array['f0000000-0000-4000-8000-000000000003'::uuid], 'tag filter (normalized) finds the ECE textbook');
-select is((select array_agg(id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], p_reels_only => true)),
+select is((select array_agg(id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], p_reels_only => true, p_limit => 100)
+           where id::text like 'f0000000-%'),
           array['f0000000-0000-4000-8000-000000000004'::uuid], 'reels_only returns only reels');
-select is((select array_agg(id) from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], p_sort => 'price_asc', p_limit => 1)),
-          array['f0000000-0000-4000-8000-000000000002'::uuid], 'price low to high');
+select is((select (array_agg(id))[1] from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], p_sort => 'price_asc', p_limit => 100)
+           where id::text like 'f0000000-%'),
+          'f0000000-0000-4000-8000-000000000002'::uuid, 'price low to high');
 
 select public.swipe('f0000000-0000-4000-8000-000000000001', 'save');
 select is((select count(*)::int from public.listing_interactions where action = 'save'), 1, 'Ben sees his saved listing');
 
 -- Cross-campus: Cy (Riverbend) browses UA ------------------------------------
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000c3","role":"authenticated"}';
-select is((select count(*)::int from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[])), 4,
+select is((select count(*)::int from public.search_listing_ids(array['a1000000-0000-4000-8000-000000000001']::uuid[], p_limit => 100)
+           where id::text like 'f0000000-%'), 4,
           'a Riverbend student can search UA listings');
 select is((select count(*)::int from public.listing_interactions), 0, 'saves are private to their owner');
 

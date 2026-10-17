@@ -40,8 +40,11 @@ src/
     u/[id]/                   someone else's public profile + their listings
     c/[campus]/               everything campus-scoped (/c/ua, /c/auburn)
       layout.tsx              app frame: campus theme, header + campus switcher, bottom tabs
-      page.tsx                Buy feed                          (to build: stub)
-      swipe/  reels/  sell/                                     (to build: stubs)
+      page.tsx                Buy feed
+      swipe/  reels/                                            (to build: stubs)
+      sell/                   Sell tab: my listings (active/sold), mark sold / relist / remove,
+                              requests I could fill (one-click offer)
+      sell/new/               New post: photos (up to 8) or a reel (video), tags, price, trade wants
       requests/               channels, search, post a request, "I can help"
       requests/[channel]/     one channel's requests
       matches/                Inbox: offers to review, conversations, pending offers
@@ -55,6 +58,7 @@ src/
     shell/                    AppFrame (header, switcher, tabs), Avatar
     requests/                 request card + forms (new channel, post, respond, owner actions)
     inbox/                    offer accept/decline/withdraw, chat view
+    sell/                     new-post form (uploads), seller listing actions, offer-a-listing button
     account/                  profile form (with photo upload)
     listing/                  ListingGrid: compact tiles for profile/saved lists
     auth/                     sign-in, signup, password field, auth layout
