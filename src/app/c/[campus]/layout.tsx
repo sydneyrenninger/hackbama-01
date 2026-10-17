@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
+import { CampusTheme } from "@/components/campus-theme";
 import { getCampus } from "@/lib/tenant";
 import { requireAccount } from "@/lib/auth";
 
 // Requires a signed-in, onboarded account. Loads the tenant being viewed (may differ from
-// the user's home campus — cross-campus browsing) and exposes its theme as CSS variables.
+// the user's home campus — cross-campus browsing; RLS hides campuses you can't browse)
+// and applies its theme as CSS variables (bg-campus / bg-primary).
 export default async function CampusLayout({
   children,
   params,
@@ -16,16 +18,5 @@ export default async function CampusLayout({
   const campus = await getCampus(slug);
   if (!campus) notFound();
 
-  return (
-    <div
-      style={
-        {
-          "--campus-primary": campus.theme.primary,
-          "--campus-secondary": campus.theme.secondary,
-        } as React.CSSProperties
-      }
-    >
-      {children}
-    </div>
-  );
+  return <CampusTheme tenant={campus}>{children}</CampusTheme>;
 }
