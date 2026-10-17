@@ -70,6 +70,7 @@ scripts/
   db-setup.sh                 runs migrations + seed against SUPABASE_DB_URL
   seed-demo.ts                demo users + listings
 tests/core.test.ts            unit tests (`npm test`)
+prototype/                    click-through UI mockup (design reference; open index.html)
 ```
 
 ## Accounts
