@@ -5,7 +5,7 @@ export function AuthShell({ children, aside }: { children: ReactNode; aside?: Re
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       <section className="relative flex flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground lg:p-14">
-        <p className="font-display text-xl font-bold">Swapp</p>
+        <p className="font-display text-xl font-bold">Bama Buy</p>
         <div className="my-10 max-w-md lg:my-0">
           <h1 className="font-display text-4xl font-extrabold leading-[1.05] lg:text-6xl">
             Swap what you have for what your semester needs.

@@ -54,12 +54,12 @@ export default async function AccountPage() {
           <ProfileForm initial={{ displayName: p.display_name, bio: p.bio, major: p.major, gradYear: p.grad_year, avatarPath: p.avatar_path }} />
         </section>
 
-        <section aria-labelledby="saved-h" className="space-y-3">
+        <section id="saved" aria-labelledby="saved-h" className="scroll-mt-20 space-y-3">
           <h2 id="saved-h" className="font-display text-xl font-bold">Saved</h2>
-          <ListingGrid listings={saved as unknown as GridListing[]} emptyText="Listings you save will show up here." />
+          <ListingGrid listings={saved as unknown as GridListing[]} emptyText="Listings you save will show up here." linkQuery="saved=1" />
         </section>
 
-        <section aria-labelledby="reqs-h" className="space-y-3">
+        <section id="requests" aria-labelledby="reqs-h" className="scroll-mt-20 space-y-3">
           <h2 id="reqs-h" className="font-display text-xl font-bold">My requests</h2>
           {myRequests.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">

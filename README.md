@@ -1,6 +1,6 @@
-# Swapp
+# Bama Buy
 
-Campus Tinder for stuff: swipe on what you need, and what you need swipes back.
+The student marketplace for your campus: scroll listings like reels, post what you need, and buy, sell and trade across campuses.
 
 **Stack:** Next.js 15 (App Router) · Tailwind v4 · Supabase (Postgres, Auth, RLS, Storage, Realtime) · zod · Framer Motion · Vercel
 
@@ -35,7 +35,9 @@ src/
     forgot-password/, reset-password/, auth/confirm/   password reset by email link
     onboarding/               first-run profile: name, major, grad year, bio (required once)
     app/                      post-login router: onboarding or your campus
+    dashboard/                top-right avatar: stats, offers/unread to handle, shortcuts, my listings
     account/                  my profile (edit, photo), saved listings, my requests, sign out
+    listing/[id]/             reel-style viewer: scroll the search results; View / Buy / Save / Comment
     communities/              Community tab: directory of campuses
     u/[id]/                   someone else's public profile + their listings
     c/[campus]/               everything campus-scoped (/c/ua, /c/auburn)

@@ -1,4 +1,4 @@
-# Swapp UI prototype (design reference)
+# Bama Buy UI prototype (design reference)
 
 A self-contained, click-through mockup of the app's screens: signup, Buy grid, product view,
 Sell, Requests (channels), Inbox and chat. It uses fake data stored in the browser's

@@ -12,9 +12,10 @@ export type ListingFilters = {
   limit?: number;
 };
 
-const LISTING_CARD = `id, title, category, kind, price_cents, condition, status, available_from, available_until,
-  semester_moments, tags, is_reel, created_at, tenant:tenants(id, slug, short_name, primary_color),
-  seller:profiles!listings_seller_id_fkey(id, display_name, completed_trades),
+const LISTING_CARD = `id, title, description, category, kind, price_cents, condition, status, available_from, available_until,
+  semester_moments, tags, is_reel, pickup_notes, trade_wants_categories, trade_wants_text, created_at, seller_id, tenant_id,
+  tenant:tenants(id, slug, short_name, primary_color, secondary_color),
+  seller:profiles!listings_seller_id_fkey(id, display_name, avatar_path, completed_trades),
   images:listing_images(storage_path, position, media_type)`;
 
 async function cardsInOrder(supabase: Awaited<ReturnType<typeof createClient>>, ids: string[]) {
@@ -123,8 +124,49 @@ export async function getChannel(slug: string) {
 
 export async function getListing(id: string) {
   const supabase = await createClient();
-  const { data } = await supabase.from("listings").select(`${LISTING_CARD}, description, pickup_notes, trade_wants_categories, trade_wants_text, seller_id, tenant_id`).eq("id", id).maybeSingle();
+  const { data } = await supabase.from("listings").select(LISTING_CARD).eq("id", id).maybeSingle();
   return data;
+}
+
+/** A seller's active listings, newest first (the reel viewer's "from this profile" context). */
+export async function getSellerListings(sellerId: string, limit = 40) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("listings").select(LISTING_CARD)
+    .eq("seller_id", sellerId).eq("status", "active").order("created_at", { ascending: false }).limit(limit);
+  return data ?? [];
+}
+
+/** Which of these listings the current user has saved. */
+export async function getSavedIds(listingIds: string[]): Promise<string[]> {
+  if (listingIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase.from("listing_interactions").select("listing_id")
+    .eq("user_id", user.id).eq("action", "save").in("listing_id", listingIds);
+  return (data ?? []).map((r) => r.listing_id as string);
+}
+
+/** Comment counts per listing (listings you can't see count as 0). */
+export async function getCommentCounts(listingIds: string[]): Promise<Record<string, number>> {
+  if (listingIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("comment_counts", { p_listing_ids: listingIds });
+  return Object.fromEntries(((data ?? []) as { listing_id: string; comments: number }[]).map((r) => [r.listing_id, Number(r.comments)]));
+}
+
+export type ListingComment = {
+  id: string; body: string; created_at: string;
+  author: { id: string; display_name: string; avatar_path: string | null } | null;
+};
+
+/** A listing's comments, oldest first. */
+export async function getComments(listingId: string, limit = 100): Promise<ListingComment[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("listing_comments")
+    .select("id, body, created_at, author:profiles(id, display_name, avatar_path)")
+    .eq("listing_id", listingId).order("created_at", { ascending: true }).limit(limit);
+  return (data ?? []) as unknown as ListingComment[];
 }
 
 export async function getDeck(limit = 20) {

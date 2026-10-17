@@ -23,6 +23,12 @@ export default async function BuyFeed({
     q: sp.q, category: sp.category || undefined, sort,
   }).catch(() => []);
 
+  // Tapping a tile opens the reel viewer on these same results.
+  const ctxParams = new URLSearchParams({ c: campus });
+  if (sp.q) ctxParams.set("q", sp.q);
+  if (sp.category) ctxParams.set("category", sp.category);
+  ctxParams.set("sort", sort); // same order as this feed
+
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <form method="get" className="flex flex-wrap gap-2">
@@ -44,7 +50,7 @@ export default async function BuyFeed({
         <p className="py-16 text-center text-muted-foreground">No listings match. Try another search or campus.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {listings.map((l) => <ListingTile key={l.id} l={l as never} />)}
+          {listings.map((l) => <ListingTile key={l.id} l={l as never} href={`/listing/${l.id}?${ctxParams}`} />)}
         </div>
       )}
     </div>

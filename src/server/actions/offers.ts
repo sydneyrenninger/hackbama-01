@@ -16,6 +16,24 @@ export async function swipe(input: z.input<typeof swipeInput>): Promise<ActionRe
   return { ok: true, data: { offerId: (data as { offer_id: string | null })?.offer_id ?? null } };
 }
 
+/** Save or unsave a listing (the bookmark in the reel viewer). */
+export async function setSaved(listingId: string, saved: boolean): Promise<ActionResult> {
+  const { supabase, user } = await authed();
+  if (!user) return fail("Sign in to continue.");
+  if (!ids.uuid.safeParse(listingId).success) return fail("Listing not found.");
+  if (saved) {
+    const { error } = await supabase.rpc("swipe", { p_listing_id: listingId, p_action: "save", p_message: null });
+    if (error) return fail(error);
+  } else {
+    // RLS lets users clear their own interactions.
+    const { error } = await supabase.from("listing_interactions").delete()
+      .eq("user_id", user.id).eq("listing_id", listingId).eq("action", "save");
+    if (error) return fail(error);
+  }
+  revalidatePath("/account");
+  return { ok: true };
+}
+
 export async function respondToOffer(offerId: string, accept: boolean): Promise<ActionResult<{ conversationId?: string }>> {
   const { supabase, user } = await authed();
   if (!user) return fail("Sign in to continue.");

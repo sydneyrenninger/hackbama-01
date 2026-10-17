@@ -3,7 +3,7 @@
 -- Everything runs inside a transaction and is rolled back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(38);
 
 -- Fixtures -----------------------------------------------------------
 insert into auth.users (id, email, email_confirmed_at) values
@@ -112,9 +112,50 @@ create temp table t_conv as
 select is((select array_agg(user_id order by user_id) from public.conversation_participants where conversation_id = (select id from t_conv)),
           array['a0000000-0000-4000-8000-0000000000a1'::uuid, 'a0000000-0000-4000-8000-0000000000b2'::uuid],
           'accepting opens a private chat between exactly the two of them');
+-- The message sent with the offer must be the first chat message (it used to vanish).
+select is((select count(*)::int from public.messages where conversation_id = (select id from t_conv)), 1,
+          'accepting copies the offer message into the chat');
+select is((select body from public.messages where conversation_id = (select id from t_conv)), 'I tutor ECE and have the book',
+          'the first chat message is the one sent with the offer');
+select is((select sender_id from public.messages where conversation_id = (select id from t_conv)), 'a0000000-0000-4000-8000-0000000000a1'::uuid,
+          'and it is from the person who sent the offer');
 
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000c3","role":"authenticated"}';
 select is((select count(*)::int from public.conversations where id = (select id from t_conv)), 0, 'outsiders cannot see the chat');
+
+-- Comments --------------------------------------------------------------------
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000b2","role":"authenticated"}';
+select lives_ok($$ insert into public.listing_comments (listing_id, author_id, body)
+  values ('f0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b2', '  Is this still available?  ') $$,
+  'a student can comment on a listing');
+select is((select body from public.listing_comments where author_id = 'a0000000-0000-4000-8000-0000000000b2'),
+          'Is this still available?', 'comments are trimmed');
+select throws_ok($$ insert into public.listing_comments (listing_id, author_id, body)
+  values ('f0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b2', '   ') $$,
+  '23514', null, 'empty comments are rejected');
+select throws_ok($$ insert into public.listing_comments (listing_id, author_id, body)
+  values ('f0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000a1', 'posting as Ana') $$,
+  '42501', null, 'cannot comment as someone else');
+select is((select comments::int from public.comment_counts(array['f0000000-0000-4000-8000-000000000001']::uuid[])), 1,
+          'comment_counts counts comments per listing');
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000c3","role":"authenticated"}';
+select is((select count(*)::int from public.listing_comments), 1, 'comments are visible to other campuses that can see the listing');
+delete from public.listing_comments;  -- RLS: Cy may not delete, so this removes nothing
+select is((select count(*)::int from public.listing_comments), 1, 'other students cannot delete a comment');
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000a1","role":"authenticated"}';
+delete from public.listing_comments where listing_id = 'f0000000-0000-4000-8000-000000000001';
+select is((select count(*)::int from public.listing_comments), 0, 'the listing''s seller can delete a comment on it');
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-0000000000b2","role":"authenticated"}';
+select lives_ok($$ insert into public.listing_comments (listing_id, author_id, body)
+  select 'f0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b2', 'comment ' || n from generate_series(1, 10) n $$,
+  'ten comments in a minute are allowed');
+select throws_ok($$ insert into public.listing_comments (listing_id, author_id, body)
+  values ('f0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b2', 'one too many') $$,
+  'P0001', 'comment_rate_limited', 'commenting is rate limited');
+select throws_ok($$ update public.listing_comments set body = 'edited' $$, '42501', null, 'comments cannot be edited');
 
 select * from finish();
 rollback;

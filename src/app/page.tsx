@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { ArrowRight, Film, Hand, Layers, School } from "lucide-react";
+import { ArrowRight, Film, Hand, PlaySquare, School } from "lucide-react";
 import { CampusTheme } from "@/components/campus-theme";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
-// Swapp's own colors for the signed-out landing page (campus pages use each campus's theme).
+// Bama Buy's own colors for the signed-out landing page (campus pages use each campus's theme).
 const BRAND = { primary_color: "#9E1B32", secondary_color: "#828A8F" };
 
 const FEATURES = [
-  { icon: Layers, title: "Swipe to match", body: "Search for what you need, then swipe through the results. Swipe right and the seller gets your offer." },
-  { icon: Hand, title: "Post what you want", body: "Request a lab kit, a ride or a tutor in a channel. Sellers see it and offer what you need." },
-  { icon: Film, title: "Reels that sell", body: "Show off an item in a short clip. Tag it by major, club or category so the right people find it." },
+  { icon: PlaySquare, title: "Scroll it like reels", body: "Search for what you need, then scroll through the results full screen. Save it, ask a question, or send an offer in one tap." },
+  { icon: Hand, title: "Post what you need", body: "Request a lab kit, a ride or a tutor in a channel. Sellers see it and offer what you're looking for." },
+  { icon: Film, title: "Show it off", body: "Post photos or a short video with a caption. Tag it by major, club or category so the right people find it." },
   { icon: School, title: "Every campus, verified", body: "Sign up with your .edu email and join your campus. Browse other schools to buy and sell across campuses." },
 ];
 
@@ -25,10 +25,10 @@ export default async function Home() {
   return (
     <CampusTheme tenant={BRAND} className="min-h-dvh">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
-        <span className="font-display text-2xl font-extrabold text-primary">swapp</span>
+        <span className="font-display text-2xl font-extrabold text-primary">Bama Buy</span>
         <nav className="flex items-center gap-2">
           {user ? (
-            <Button asChild size="sm"><Link href="/app">Open Swapp</Link></Button>
+            <Button asChild size="sm"><Link href="/app">Open Bama Buy</Link></Button>
           ) : (
             <>
               <Button asChild variant="ghost" size="sm"><Link href="/login">Sign in</Link></Button>
@@ -43,14 +43,14 @@ export default async function Home() {
           <div className="mx-auto max-w-5xl px-5 py-16 sm:py-24">
             <p className="text-sm font-semibold uppercase tracking-widest opacity-80">The campus marketplace</p>
             <h1 className="mt-3 max-w-3xl font-display text-5xl font-extrabold leading-[1.02] sm:text-7xl">
-              Campus Tinder for stuff.
+              Buy, sell and trade on campus.
             </h1>
             <p className="mt-5 max-w-xl text-lg opacity-90">
-              Swipe on what you need, and what you need swipes back. Buy, sell and request across campuses with your .edu email.
+              The student marketplace for your campus. Scroll listings like reels, post what you need, and deal with students at your school and beyond.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {user ? (
-                <Button asChild variant="secondary" size="lg"><Link href="/app">Open Swapp <ArrowRight className="h-4 w-4" aria-hidden /></Link></Button>
+                <Button asChild variant="secondary" size="lg"><Link href="/app">Open Bama Buy <ArrowRight className="h-4 w-4" aria-hidden /></Link></Button>
               ) : (
                 <>
                   <Button asChild variant="secondary" size="lg"><Link href="/signup">Create your account <ArrowRight className="h-4 w-4" aria-hidden /></Link></Button>
@@ -64,7 +64,7 @@ export default async function Home() {
         </section>
 
         <section className="mx-auto max-w-5xl px-5 py-14" aria-labelledby="how">
-          <h2 id="how" className="font-display text-3xl font-bold">Matching, not searching</h2>
+          <h2 id="how" className="font-display text-3xl font-bold">Made for campus</h2>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2">
             {FEATURES.map(({ icon: Icon, title, body }) => (
               <li key={title} className="rounded-lg border border-border bg-card p-5">

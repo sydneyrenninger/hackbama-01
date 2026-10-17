@@ -1,5 +1,5 @@
 "use strict";
-// Swapp - campus marketplace. Vanilla TypeScript, no dependencies.
+// Bama Buy - campus marketplace. Vanilla TypeScript, no dependencies.
 // ---------- EMAIL SETUP (free: emailjs.com, 200 emails/month) ----------
 // 1) Create an EmailJS account, add an Email Service (Gmail etc.)
 // 2) Create a template: To Email = {{to_email}}, body contains {{code}}
@@ -106,9 +106,9 @@ function visible() {
 function tile(l, a = "open") {
     return `<article class="tile ${l.kind} ${l.sold ? "sold" : ""}" data-a="${a}" data-id="${l.id}"><div class="tile-media">${media(l)}<span class="pill">${l.sold ? "Sold" : l.kind === "reel" ? "▶ Reel" : "Photo"}</span><span class="pr">$${l.price}${l.acceptTrade ? " · Trade" : ""}</span></div><div class="tt"><b>${esc(l.title)}</b><span class="tile-seller">${esc(l.seller)} · ${esc(l.cond)}</span><div class="tile-tags">${tagH(l.tags)}</div><span class="tile-open">View listing <span aria-hidden="true">→</span></span></div></article>`;
 }
-const bar = () => `<div class="bar"><span class="logo">swapp</span><span class="sp"></span><select id="uni" data-a="uni">${UNIS.map(u => `<option ${u.name === S.uni.name ? "selected" : ""}>${u.name}</option>`).join("")}</select><button class="g" data-a="logout" title="Log out">⎋</button></div>`;
+const bar = () => `<div class="bar"><span class="logo">bama buy</span><span class="sp"></span><select id="uni" data-a="uni">${UNIS.map(u => `<option ${u.name === S.uni.name ? "selected" : ""}>${u.name}</option>`).join("")}</select><button class="g" data-a="logout" title="Log out">⎋</button></div>`;
 const navH = () => `<div class="nav">${[["buy", "✦ Buy"], ["sell", "＋ Sell"], ["requests", "☰ Requests"], ["inbox", "✉ Inbox"]].map(([k, t]) => `<button class="${S.tab === k ? "on" : ""}" data-a="tab" data-k="${k}">${t}</button>`).join("")}</div>`;
-const authBox = (x) => `<div class="auth"><div class="logo" style="font-size:40px">swapp</div>${x}<div class="err">${esc(S.err)}</div></div>`;
+const authBox = (x) => `<div class="auth"><div class="logo" style="font-size:40px">bama buy</div>${x}<div class="err">${esc(S.err)}</div></div>`;
 const uniSel = () => `<select id="uni" data-a="uni">${UNIS.map(u => `<option ${u.name === S.uni.name ? "selected" : ""}>${u.name}</option>`).join("")}</select>`;
 function view() {
     switch (S.page) {

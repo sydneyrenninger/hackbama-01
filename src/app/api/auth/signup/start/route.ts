@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const tenant = Array.isArray(resolved) ? resolved[0] : null;
   if (tenant?.status === "suspended") return jsonError(403, "Sign-ups for this school are paused.");
   if (!tenant && env.unknownDomainPolicy === "reject") {
-    return jsonError(403, "Your school isn't on Quad Exchange yet.");
+    return jsonError(403, "Your school isn't on Bama Buy yet.");
   }
 
   const challengeId = randomUUID();

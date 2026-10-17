@@ -12,19 +12,43 @@ const TYPES: Record<string, { mediaType: MediaType; ext: string }> = {
   "video/webm": { mediaType: "video", ext: "webm" },
   "video/quicktime": { mediaType: "video", ext: "mov" },
 };
+// Some browsers (notably on Windows) report no type for .mov/.mp4 files, so fall back to the extension.
+const BY_EXTENSION: Record<string, string> = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", mov: "video/quicktime", qt: "video/quicktime",
+};
 const MAX_BYTES: Record<MediaType, number> = { image: 5 * 1024 * 1024, video: 50 * 1024 * 1024 };
 
 export type UploadResult = { ok: true; storagePath: string; mediaType: MediaType } | { ok: false; error: string };
+
+/** The file's real content type: what the browser reported, or what its extension implies. */
+export function detectMediaType(file: File): string | null {
+  if (TYPES[file.type]) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return BY_EXTENSION[ext] ?? null;
+}
+
+/** Turns a Storage error into something a student can act on. */
+function uploadErrorMessage(message: string, mediaType: MediaType): string {
+  const m = message.toLowerCase();
+  if (m.includes("size") || m.includes("too large") || m.includes("413")) {
+    return mediaType === "video" ? "That video is too big. Keep it under 50 MB (about 30 seconds)." : "That photo is too big. Keep it under 5 MB.";
+  }
+  if (m.includes("mime") || m.includes("type")) return "That file type isn't supported. Use an MP4, WebM or MOV video, or a JPG, PNG or WebP photo.";
+  if (m.includes("jwt") || m.includes("auth") || m.includes("row-level") || m.includes("unauthorized")) return "Your session expired. Sign in again and retry.";
+  return mediaType === "video" ? "The video didn't finish uploading. Check your connection and try again." : "Upload failed. Try again.";
+}
 
 /**
  * Uploads a photo or video for a listing you own, then registers it.
  * Call after createListing(); position 0 is the cover (for a reel, upload the video at 0).
  */
 export async function uploadListingMedia(file: File, listingId: string, position: number): Promise<UploadResult> {
-  const type = TYPES[file.type];
-  if (!type) return { ok: false, error: "Use a JPG, PNG or WebP photo, or an MP4, WebM or MOV video." };
+  const contentType = detectMediaType(file);
+  const type = contentType ? TYPES[contentType] : undefined;
+  if (!contentType || !type) return { ok: false, error: "Use a JPG, PNG or WebP photo, or an MP4, WebM or MOV video." };
   if (file.size > MAX_BYTES[type.mediaType]) {
-    return { ok: false, error: type.mediaType === "video" ? "Videos must be under 50 MB." : "Photos must be under 5 MB." };
+    return { ok: false, error: type.mediaType === "video" ? "That video is too big. Keep it under 50 MB (about 30 seconds)." : "Photos must be under 5 MB." };
   }
 
   const supabase = createClient();
@@ -34,8 +58,11 @@ export async function uploadListingMedia(file: File, listingId: string, position
   const storagePath = `${user.id}/${crypto.randomUUID()}.${type.ext}`;
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET[type.mediaType])
-    .upload(storagePath, file, { contentType: file.type, upsert: false });
-  if (uploadError) return { ok: false, error: "Upload failed. Try again." };
+    .upload(storagePath, file, { contentType, upsert: false, cacheControl: "3600" });
+  if (uploadError) {
+    console.error("[upload] storage error:", uploadError.message);
+    return { ok: false, error: uploadErrorMessage(uploadError.message, type.mediaType) };
+  }
 
   const attached = await attachListingMedia(listingId, storagePath, position, type.mediaType);
   if (!attached.ok) {

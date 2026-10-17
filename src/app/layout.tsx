@@ -6,8 +6,8 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-disp
 const body = Atkinson_Hyperlegible({ subsets: ["latin"], variable: "--font-body", weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "Swapp",
-  description: "Campus Tinder for stuff",
+  title: "Bama Buy",
+  description: "Buy, sell and trade with students on your campus and beyond.",
 };
 
 export default function RootLayout({

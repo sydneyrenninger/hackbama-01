@@ -15,10 +15,14 @@ export type GridListing = {
 };
 
 /**
- * Compact listing tiles for profile / saved lists. Links to /listing/[id] (the product view).
+ * Compact listing tiles for profile / saved lists. Links to /listing/[id] (the reel viewer).
  * The Buy feed can use its own tile; this one is deliberately small.
  */
-export function ListingGrid({ listings, emptyText = "Nothing here yet." }: { listings: GridListing[]; emptyText?: string }) {
+export function ListingGrid({ listings, emptyText = "Nothing here yet.", linkQuery }: {
+  listings: GridListing[]; emptyText?: string;
+  /** Viewer context, e.g. "saved=1" or "seller=<id>", so tapping a tile scrolls through this same list. */
+  linkQuery?: string;
+}) {
   if (listings.length === 0) {
     return <p className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">{emptyText}</p>;
   }
@@ -29,7 +33,7 @@ export function ListingGrid({ listings, emptyText = "Nothing here yet." }: { lis
         const price = formatPrice(l.price_cents, l.kind);
         return (
           <li key={l.id}>
-            <Link href={`/listing/${l.id}`} className="group block overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
+            <Link href={`/listing/${l.id}${linkQuery ? `?${linkQuery}` : ""}`} className="group block overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md">
               <div className={cn("relative aspect-[4/5] bg-secondary", l.status === "sold" && "grayscale")}>
                 {cover?.media_type === "video" ? (
                   <video src={mediaUrl(cover.storage_path, "video")} muted playsInline preload="metadata" className="h-full w-full object-cover" />

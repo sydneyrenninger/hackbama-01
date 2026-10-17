@@ -41,7 +41,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
         <section aria-labelledby="their-listings" className="space-y-3">
           <h2 id="their-listings" className="font-display text-xl font-bold">Listings</h2>
-          <ListingGrid listings={listings as unknown as GridListing[]} emptyText={`${profile.display_name} has no active listings.`} />
+          <ListingGrid listings={listings as unknown as GridListing[]} emptyText={`${profile.display_name} has no active listings.`} linkQuery={`seller=${profile.id}`} />
         </section>
       </div>
     </AppFrame>

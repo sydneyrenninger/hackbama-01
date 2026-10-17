@@ -22,10 +22,10 @@ export default async function NewPostPage({ params }: { params: Promise<{ campus
       </Link>
       <div>
         <h1 className="font-display text-3xl font-bold">New post</h1>
-        <p className="mt-1 text-muted-foreground">Add photos or a short video, set a price, and tag it so buyers can find it.</p>
+        <p className="mt-1 text-muted-foreground">Add photos or a short video, then preview your post and write a caption.</p>
       </div>
       {canPost && home ? (
-        <NewPostForm campusSlug={slug} homeCampusName={home.name} />
+        <NewPostForm campusSlug={slug} homeCampusName={home.name} authorName={ctx.profile.display_name} authorAvatarPath={ctx.profile.avatar_path} />
       ) : (
         <p className="rounded-md bg-secondary p-4 text-secondary-foreground">
           Your campus isn&apos;t open for posting yet, so you can browse and make offers but not list items.

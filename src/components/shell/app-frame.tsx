@@ -42,13 +42,13 @@ export async function AppFrame({ campusSlug, children }: { campusSlug?: string; 
     <CampusTheme tenant={tenant} className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link href={`/c/${tenant.slug}`} className="font-display text-2xl font-extrabold text-primary">swapp</Link>
+          <Link href={`/c/${tenant.slug}`} className="whitespace-nowrap font-display text-xl font-extrabold text-primary sm:text-2xl">Bama Buy</Link>
           <CampusSwitcher current={tenant.slug} options={options} />
           <span className="flex-1" />
           <Link href="/communities" aria-label="All campuses" className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground hover:bg-muted">
             <Users className="h-5 w-5" aria-hidden />
           </Link>
-          <Link href="/account" aria-label="Your account">
+          <Link href="/dashboard" aria-label="Your dashboard">
             <Avatar name={ctx.profile.display_name} path={ctx.profile.avatar_path} size="sm" />
           </Link>
         </div>

@@ -29,6 +29,7 @@ const MESSAGES: Record<string, string> = {
   channel_description_too_long: "Keep the description under 280 characters.",
   channel_rate_limited: "You've created a lot of channels today. Try again tomorrow.",
   channel_exists: "A channel with that name already exists.",
+  comment_rate_limited: "You're commenting too fast. Wait a minute.",
 };
 
 export function friendlyDbError(err: { message?: string; code?: string } | null | undefined): string {

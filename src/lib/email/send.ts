@@ -24,7 +24,7 @@ function transport(): Transporter {
 async function send(to: string, subject: string, html: string, text: string): Promise<SendResult> {
   if (!emailConfigured()) return { ok: false, reason: "not_configured" };
   try {
-    await transport().sendMail({ from: `"Quad Exchange" <${serverEnv().gmailUser}>`, to, subject, html, text });
+    await transport().sendMail({ from: `"Bama Buy" <${serverEnv().gmailUser}>`, to, subject, html, text });
     return { ok: true };
   } catch (e) {
     // Log the error code only; never the code being sent or credentials.
@@ -37,20 +37,20 @@ export function sendVerificationCode(to: string, code: string, campusName: strin
   const where = campusName ? ` for ${escape(campusName)}` : "";
   return send(
     to,
-    `${code} is your Quad Exchange code`,
+    `${code} is your Bama Buy code`,
     `<div style="font-family:system-ui,sans-serif;max-width:480px">
        <p>Your verification code${where}:</p>
        <p style="font-size:32px;letter-spacing:8px;font-weight:700">${code}</p>
        <p>It expires in 10 minutes. If you didn't ask for this, ignore this email.</p>
      </div>`,
-    `Your Quad Exchange verification code${campusName ? ` for ${campusName}` : ""}: ${code}\nIt expires in 10 minutes.`,
+    `Your Bama Buy verification code${campusName ? ` for ${campusName}` : ""}: ${code}\nIt expires in 10 minutes.`,
   );
 }
 
 export function sendPasswordReset(to: string, link: string) {
   return send(
     to,
-    "Reset your Quad Exchange password",
+    "Reset your Bama Buy password",
     `<div style="font-family:system-ui,sans-serif;max-width:480px">
        <p>Use this link to choose a new password. It expires soon and works once.</p>
        <p><a href="${escape(link)}">Reset password</a></p>
