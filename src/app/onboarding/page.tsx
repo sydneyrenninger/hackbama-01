@@ -6,5 +6,5 @@ export default async function OnboardingPage() {
   const account = await getAccount();
   if (!account) redirect("/login");
   if (account.profile.onboarded) redirect("/account");
-  return null;
+  redirect("/app"); // Temporary until the onboarding form exists.
 }
